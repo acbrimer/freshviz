@@ -1,0 +1,53 @@
+import * as React from "react";
+import VizComponentContext, {
+  VizComponentContextState,
+} from "./VizComponentContext";
+
+import VizComponentProvider, {
+  VizComponentProviderProps,
+} from "./VizComponentProvider";
+
+export interface MapDataToProps<M, T> {
+  (data: VizComponentContextState): M;
+}
+
+export interface withVizComponentContext {
+  <M, VizComponentContextState>(
+    mapDataToProps?: MapDataToProps<M, VizComponentContextState>
+  ): (c: React.ComponentType<M>) => React.ComponentType<M>;
+}
+
+export const VizComponentWrapper = (props: any) => {
+  const { Component, mapDataToProps, componentProps } = props;
+  const componentContext = React.useContext(VizComponentContext);
+  return (
+    <Component
+      {...componentProps}
+      {...(mapDataToProps
+        ? mapDataToProps(componentContext)
+        : componentContext)}
+    />
+  );
+};
+
+export default <M, T>(mapDataToProps?: MapDataToProps<M, T>) =>
+  (Component: React.ComponentType<M>) => {
+    return (props: any) => {
+      console.log("withVizComponent props", props);
+      const { groupBy, fields, linkActions, name } = props;
+      return (
+        <VizComponentProvider
+          groupBy={groupBy}
+          fields={fields}
+          linkActions={linkActions}
+          name={name}
+        >
+          <VizComponentWrapper
+            componentProps={props}
+            component={Component}
+            mapDataToProps={mapDataToProps}
+          />
+        </VizComponentProvider>
+      );
+    };
+  };
