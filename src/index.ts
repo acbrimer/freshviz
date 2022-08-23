@@ -1,3 +1,18 @@
-import * as VizContext from "./VizContext";
+import { VizContext, VizProvider } from "./VizContext";
+import {
+  VizComponentContext,
+  VizComponentProvider,
+  TestComponent,
+  BarChart,
+  ScatterPlot,
+} from "./VizComponents";
 
-export { VizContext };
+export {
+  VizContext,
+  VizProvider,
+  VizComponentContext,
+  VizComponentProvider,
+  TestComponent,
+  BarChart,
+  ScatterPlot,
+};

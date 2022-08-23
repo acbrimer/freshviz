@@ -1,20 +1,21 @@
 {
   "compilerOptions": {
+    "target": "ES2015",
+    "module": "ESNext",
     "declaration": true,
     "declarationDir": "lib",
-    "module": "esnext",
     "outDir": "./lib",
-    "jsx": "react",
+    "jsx": "react-jsx",
     "moduleResolution": "node",
     "noImplicitAny": false,
     "removeComments": false,
     "noLib": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es6",
     "sourceMap": true,
     "lib": ["dom", "dom.iterable", "esnext"]
   },
-  "exclude": ["./stories"],
-  "include": ["./src"]
+  "types": ["node"],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

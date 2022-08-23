@@ -8,6 +8,7 @@ import VizContext, {
 import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
 import AGG_FUNCTIONS from "./vizFieldFunctions";
+import { FilterItemProps, applyFilterItem } from "../util/filters";
 
 /**
  * aggFieldName
@@ -99,14 +100,26 @@ const VizProvider = (props: VizProviderProps) => {
     );
   }, []);
 
-  const getData = React.useCallback(
-    (groupBy: string, aggFields: any, useFilter?: boolean) => {
-      console.log("getData");
-      const _aggFields = Object.keys(aggFields).flatMap((k: any) =>
-        Object.keys(aggFields[k]).map((a: string) => ({
+  const getFilterItemIds = React.useCallback(
+    (filter: FilterItemProps) => applyFilterItem(records, idField, filter),
+    [records]
+  );
+
+  const getFilterIds = React.useCallback(
+    (filters: FilterItemProps[]) =>
+      _.intersection(
+        filters.flatMap((fi: FilterItemProps) => getFilterItemIds(fi))
+      ),
+    [getFilterItemIds]
+  );
+
+  const getAggregateData = React.useCallback(
+    (groupBy: string, fields: any, innerFilterIds?: any[]) => {
+      const aggFields = Object.keys(fields).flatMap((k: any) =>
+        Object.keys(fields[k]).map((a: string) => ({
           field: k,
           agg: a,
-          name: aggFields[k][a] === true ? aggFieldName(k, a) : aggFields[k][a],
+          name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
           re: getRegExp(k),
           fn: _.has(AGG_FUNCTIONS, a)
             ? AGG_FUNCTIONS[a as VizFieldFunctionType]
@@ -115,14 +128,14 @@ const VizProvider = (props: VizProviderProps) => {
       );
 
       const pickFields = (val: any, k: string) =>
-        _aggFields.filter((v: any) => k.match(v.re)).length > 0;
+        aggFields.filter((v: any) => k.match(v.re)).length > 0;
 
       let dataFields = Object.fromEntries(
         Object.keys(
           _.pickBy(flatten(Object.values(records)[0]) as any, pickFields)
         ).map((df: any) => [
           df,
-          _aggFields
+          aggFields
             .filter((af: any) => df.match(af.re))
             .map((f: any) => ({
               ...f,
@@ -135,9 +148,12 @@ const VizProvider = (props: VizProviderProps) => {
       // add groupBy field
       dataFields[groupBy] = [{ field: groupBy, name: groupBy, agg: "value" }];
 
-      let d = records
-        .filter((r: any) => (useFilter ? filterIds.includes(r.id) : true))
-        .map((r: any) => flatten(r));
+      let d = _.map(
+        innerFilterIds && Array.isArray(innerFilterIds)
+          ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
+          : records,
+        flatten
+      );
 
       d = d.map((r: any, ix: number) =>
         Object.fromEntries(
@@ -163,21 +179,27 @@ const VizProvider = (props: VizProviderProps) => {
 
       return res;
     },
-    [filterIds, records]
+    [records, idField]
   );
 
-  const updateFilter = () => {
-    if (filterIds.length === ids.length) {
-      const _filterIds = _.shuffle([...ids]).slice(
-        0,
-        Math.round(Math.random() * 1000)
-      );
-      setHoveredIds([]);
-      setFilterIds(_filterIds);
-    } else {
-      setFilterIds(ids);
-    }
-  };
+  const getData = React.useCallback(
+    (
+      groupBy: string,
+      fields: any,
+      useFilter?: boolean,
+      innerFilterIds?: any[]
+    ) => {
+      const fieldNames = [idField, ...Object.keys(fields)];
+      console.log("records", records[0]);
+      const d =
+        groupBy === idField
+          ? _.map(records, (v: any) => _.pick(v, fieldNames))
+          : getAggregateData(groupBy, fields, innerFilterIds);
+      console.log("getData", d);
+      return d;
+    },
+    [records]
+  );
 
   React.useEffect(() => {
     if (data) {
@@ -210,10 +232,10 @@ const VizProvider = (props: VizProviderProps) => {
         actionStates: actionStates,
         handleAddActionState: handleAddActionState,
         handleRemoveActionState: handleRemoveActionState,
+        getFilterIds: getFilterIds,
         getData: getData,
         onMouseOut: onMouseOut,
         onMouseOver: onMouseOver,
-        updateFilter: updateFilter,
       }}
     >
       {props.children}
@@ -221,4 +243,4 @@ const VizProvider = (props: VizProviderProps) => {
   );
 };
 
-export default VizProvider;
+export default React.memo(VizProvider);

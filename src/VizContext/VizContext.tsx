@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { FilterItemProps } from "../util/filters";
 
 export interface VizRecordState {
   id: string | number;
@@ -78,12 +79,13 @@ export interface VizContextState {
   actionStates: any[];
   handleAddActionState: (actionState: VizActionState) => void;
   handleRemoveActionState: (actionState: VizActionState) => void;
+  getFilterIds: (filters: FilterItemProps[]) => any[];
   getData: (
     groupBy: string,
     fields: VizDataFieldsObject,
-    useFilter?: boolean
-  ) => any;
-  updateFilter: any;
+    useFilter?: boolean,
+    innerFilterIds?: any[]
+  ) => any[];
 }
 
 const VizContext = createContext<VizContextState>({
@@ -96,12 +98,13 @@ const VizContext = createContext<VizContextState>({
   handleRemoveActionState: (s: any) => {},
   onMouseOver: (id: any) => {},
   onMouseOut: (id: any) => {},
+  getFilterIds: (filters: FilterItemProps[]) => [],
   getData: (
     groupBy: string,
     fields: VizDataFieldsObject,
-    useFilter?: boolean
-  ) => {},
-  updateFilter: () => {},
+    useFilter?: boolean,
+    innerFilterIds?: any[]
+  ) => [],
 });
 
 export default VizContext;
