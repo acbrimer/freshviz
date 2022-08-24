@@ -8,7 +8,7 @@ import VizContext, {
 import VizComponentContext, {
   VizComponentContextState,
 } from "./VizComponentContext";
-import { applyFilterItem, filterData } from "../util/filters";
+import { applyFilterItem, filterData, FilterItemProps } from "../util/filters";
 
 export interface VizComponentLinkActionProps {
   /**The `name` of the component triggering action  */
@@ -53,6 +53,7 @@ const VizComponentProvider = (props: any) => {
   const [innerFilterFilterItems, setInnerFilterFilterItems] =
     React.useState<any>([]);
   const [filterFilterItems, setFilterFilterItems] = React.useState<any>([]);
+  const [selectedFilterItems, setSelectedFilterItems] = React.useState<any>([]);
 
   const innerFilterIds = React.useMemo(
     () =>
@@ -62,11 +63,6 @@ const VizComponentProvider = (props: any) => {
     [innerFilterFilterItems]
   );
 
-  const hoveredIds = React.useMemo(
-    () => (hoverFilterItems.length === 0 ? [] : getFilterIds(hoverFilterItems)),
-    [hoverFilterItems]
-  );
-
   const data = React.useMemo(
     () =>
       filterData(
@@ -74,6 +70,35 @@ const VizComponentProvider = (props: any) => {
         filterFilterItems
       ),
     [fields, getData, groupBy, innerFilterIds, filterFilterItems]
+  );
+
+  const getComponentFilterItemIds = React.useCallback(
+    (filter: FilterItemProps) => applyFilterItem(data, groupBy, filter),
+    [data]
+  );
+
+  const getComponentFilterIds = React.useCallback(
+    (filters: FilterItemProps[]) =>
+      _.intersection(
+        filters.flatMap((fi: FilterItemProps) => getComponentFilterItemIds(fi))
+      ),
+    [getComponentFilterItemIds]
+  );
+
+  const hoveredIds = React.useMemo(
+    () =>
+      hoverFilterItems.length === 0
+        ? []
+        : getComponentFilterIds(hoverFilterItems),
+    [hoverFilterItems]
+  );
+
+  const selectedIds = React.useMemo(
+    () =>
+      selectedFilterItems.length === 0
+        ? []
+        : getComponentFilterIds(selectedFilterItems),
+    [selectedFilterItems]
   );
 
   const componentName = React.useMemo(
@@ -136,10 +161,17 @@ const VizComponentProvider = (props: any) => {
           getActionStateFilter
         )
       );
+      setSelectedFilterItems((c: any) =>
+        _.map(
+          _.filter(linkActionStates, { targetAction: "select" }),
+          getActionStateFilter
+        )
+      );
     } else {
       setHoverFilterItems((c: any) => (c.length === 0 ? c : []));
       setInnerFilterFilterItems((c: any) => (c.length === 0 ? c : []));
       setFilterFilterItems((c: any) => (c.length === 0 ? c : []));
+      setSelectedFilterItems((c: any) => (c.length === 0 ? c : []));
     }
   }, [actionStates, linkActions]);
 
@@ -150,6 +182,7 @@ const VizComponentProvider = (props: any) => {
         data: data,
         groupBy: groupBy,
         hoveredIds: hoveredIds,
+        selectedIds: selectedIds,
         handleMouseOver: handleMouseOver,
         handleMouseOut: handleMouseOut,
       }}

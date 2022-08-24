@@ -5,6 +5,7 @@ export interface VizComponentContextState {
   groupBy: string;
   data: any[];
   hoveredIds: any[];
+  selectedIds: any[];
   handleMouseOver: (e: any, data?: any) => void;
   handleMouseOut: (e: any, data?: any) => void;
   getStyle?: (record: any) => any;
@@ -15,6 +16,7 @@ const VizComponentContext = createContext<VizComponentContextState>({
   groupBy: "",
   data: [],
   hoveredIds: [],
+  selectedIds: [],
   handleMouseOver: (e: any, data?: any) => {},
   handleMouseOut: (e: any, data?: any) => {},
   getStyle: (record: any) => {},
