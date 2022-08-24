@@ -3,6 +3,7 @@ import VizComponentProvider from "./VizComponentProvider";
 import TestComponent from "./TestComponent";
 import BarChart from "./BarChart";
 import ScatterPlot from "./ScatterPlot";
+import FeatureMap from "./FeatureMap";
 
 export {
   VizComponentContext,
@@ -10,4 +11,5 @@ export {
   BarChart,
   TestComponent,
   ScatterPlot,
+  FeatureMap,
 };

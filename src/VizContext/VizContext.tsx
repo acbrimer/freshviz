@@ -73,7 +73,6 @@ export interface VizContextState {
   isLoading: boolean;
   records: VizRecordState[];
   ids: (string | number)[];
-  hoveredIds: (string | number)[];
   onMouseOver: (id: any) => void;
   onMouseOut: (id: any) => void;
   actionStates: any[];
@@ -92,7 +91,6 @@ const VizContext = createContext<VizContextState>({
   isLoading: true,
   records: [],
   ids: [],
-  hoveredIds: [],
   actionStates: [],
   handleAddActionState: (s: any) => {},
   handleRemoveActionState: (s: any) => {},

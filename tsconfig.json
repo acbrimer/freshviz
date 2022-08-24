@@ -13,7 +13,8 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "sourceMap": true,
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "resolveJsonModule": true
   },
   "types": ["node"],
   "include": ["src/**/*"],

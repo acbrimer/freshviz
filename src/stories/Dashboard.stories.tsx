@@ -4,6 +4,7 @@ import ScatterPlot from "../VizComponents/ScatterPlot";
 import BarChart from "../VizComponents/BarChart";
 import VizProvider from "../VizContext/VizProvider";
 import testData from "../VizComponents/test_data";
+import { FeatureMap } from "../VizComponents";
 
 const DashboardDemo = (props: any) => {
   return (
@@ -12,48 +13,73 @@ const DashboardDemo = (props: any) => {
       data={testData as any[]}
       idField={"precinct_id"}
     >
-      <div style={{ display: "flex", flexDirection: "row" }}>
-        <ScatterPlot
-          name="precincts"
-          groupBy={"precinct_id"}
-          keyField="absmail_votes"
-          dataField="tot_votes"
-          fields={{
-            tot_votes: { value: true },
-            absmail_votes: { value: true },
-            winning_cand: { value: true },
-            county_id: { value: true },
-          }}
-          linkActions={[
-            {
-              source: "counties",
-              actionState: "hovered",
-              sourceField: "county_id",
-              targetField: "county_id",
-              op: "eq",
-              targetAction: "hover",
-            },
-          ]}
-        />
-        <BarChart
-          name="counties"
-          groupBy="county_id"
-          keyField="county_id"
-          dataField="tot_votes"
-          fields={{
-            tot_votes: { sum: "tot_votes" },
-          }}
-          linkActions={[
-            {
-              source: "precincts",
-              actionState: "hovered",
-              sourceField: "precinct_id",
-              targetField: "precinct_id",
-              op: "xeq",
-              targetAction: "innerFilter",
-            },
-          ]}
-        />
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <ScatterPlot
+            name="precincts"
+            groupBy={"precinct_id"}
+            keyField="absmail_votes"
+            dataField="tot_votes"
+            fields={{
+              tot_votes: { value: true },
+              absmail_votes: { value: true },
+              winning_cand: { value: true },
+              county_id: { value: true },
+            }}
+            linkActions={[
+              {
+                source: "counties",
+                actionState: "hovered",
+                sourceField: "county_id",
+                targetField: "county_id",
+                op: "eq",
+                targetAction: "hover",
+              },
+            ]}
+          />
+          <BarChart
+            name="counties"
+            groupBy="county_id"
+            keyField="county_id"
+            dataField="tot_votes"
+            fields={{
+              tot_votes: { sum: "tot_votes" },
+            }}
+            linkActions={[
+              {
+                source: "precincts",
+                actionState: "hovered",
+                sourceField: "county_id",
+                targetField: "county_id",
+                op: "xeq",
+                targetAction: "innerFilter",
+              },
+            ]}
+          />
+        </div>
+        <div style={{ width: 500, height: 300, display: "flex" }}>
+          <FeatureMap
+            name="precincts"
+            groupBy={"precinct_id"}
+            mapSource="https://storage.googleapis.com/okie-analytica.appspot.com/public_files/OKPrecincts2010.json"
+            fields={{
+              tot_votes: { value: true },
+              absmail_votes: { value: true },
+              winning_cand: { value: true },
+              county_id: { value: true },
+            }}
+            linkActions={[
+              {
+                source: "counties",
+                actionState: "hovered",
+                sourceField: "county_id",
+                targetField: "county_id",
+                op: "eq",
+                targetAction: "hover",
+              },
+            ]}
+          />
+        </div>
       </div>
     </VizProvider>
   );
