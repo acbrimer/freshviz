@@ -14,6 +14,19 @@ module.exports = {
       include: /node_modules/,
       type: "javascript/auto",
     });
+    const leafletRule = {
+      test: /\.js$/,
+      include: [/node_modules\/@react-leaflet/, /node_modules\/react-leaflet/],
+      use: [
+        {
+          loader: "babel-loader",
+          options: {
+            presets: [["@babel/preset-env", { modules: "commonjs" }]],
+          },
+        },
+      ],
+    };
+    config.module.rules.push(leafletRule);
     return config;
   },
 };

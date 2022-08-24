@@ -5,6 +5,7 @@ import {
   TestComponent,
   BarChart,
   ScatterPlot,
+  FeatureMap,
 } from "./VizComponents";
 
 export {
@@ -15,4 +16,5 @@ export {
   TestComponent,
   BarChart,
   ScatterPlot,
+  FeatureMap,
 };

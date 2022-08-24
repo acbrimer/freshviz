@@ -3,36 +3,26 @@ import { ScatterPoint as ReavizScatterPoint } from "reaviz";
 import VizComponentContext from "../VizComponentContext";
 
 const ScatterPoint = (props: any) => {
-  const { data } = props;
-  const { key, metadata: record } = data;
   const c = React.useContext(VizComponentContext);
-  const { handleMouseOver, handleMouseOut, hoveredIds, groupBy } = c;
-  const id = record[groupBy];
-
-  const [isHovered, setIsHovered] = React.useState<boolean>(false);
+  const { handleMouseOver, handleMouseOut } = c;
 
   const onMouseOver = React.useCallback(
-    async (e: any) => {
-      handleMouseOver(e, record);
+    async (pointData: any) => {
+      handleMouseOver(null, pointData.metadata);
     },
-    [handleMouseOver, record]
+    [handleMouseOver]
   );
 
   const onMouseOut = React.useCallback(
-    async (e: any) => {
-      handleMouseOut(e, record);
+    async (pointData: any) => {
+      handleMouseOut(null, pointData.metadata);
     },
-    [handleMouseOut, record]
+    [handleMouseOut]
   );
-
-  React.useLayoutEffect(() => {
-    setIsHovered(hoveredIds.includes(id));
-  }, [hoveredIds, id]);
 
   return (
     <ReavizScatterPoint
       {...props}
-      active={hoveredIds.length === 0 || isHovered}
       onMouseEnter={onMouseOver}
       onMouseLeave={onMouseOut}
     />

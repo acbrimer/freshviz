@@ -1,28 +1,47 @@
 import * as React from "react";
+import * as _ from "lodash";
 import {
   ScatterPlot as ReavizScatterPlot,
   ScatterSeries as ReavizScatterSeries,
+  ScatterSeriesProps as ReavizScatterSeriesProps,
 } from "reaviz";
+
+import {
+  ReavizScatterPlotProps,
+  ReavizComponentCommonProps,
+} from "../ReavizComponent";
 import VizComponentContext from "../VizComponentContext";
 import ScatterPoint from "./ScatterPoint";
 
-export interface ScatterPlotComponentProps {
-  keyField: string;
-  dataField: string;
+export interface ScatterPlotComponentProps extends ReavizComponentCommonProps {
+  ScatterPlotProps?: Partial<Omit<ReavizScatterPlotProps, "series" | "data">>;
+  ScatterSeriesProps?: Partial<
+    Omit<ReavizScatterSeriesProps, "activeIds" | "point">
+  >;
 }
 
-const ScatterPlotComponent = React.memo((props: any) => {
-  const { keyField, dataField } = props;
+const ScatterPlotComponent = React.memo((props: ScatterPlotComponentProps) => {
+  const { keyField, dataField, idField, ScatterPlotProps, ScatterSeriesProps } =
+    props;
   const c = React.useContext(VizComponentContext);
-  const { data, groupBy } = c;
+  const { data, groupBy, hoveredIds } = c;
 
   return (
     <ReavizScatterPlot
       height={300}
       width={300}
-      series={<ReavizScatterSeries animated={false} point={<ScatterPoint />} />}
+      {...ScatterPlotProps}
+      series={
+        <ReavizScatterSeries
+          animated={false}
+          {...ScatterSeriesProps}
+          activeIds={hoveredIds}
+          point={<ScatterPoint />}
+        />
+      }
       data={data.map((d: any) => ({
-        key: d[keyField || groupBy],
+        id: d[idField || groupBy],
+        key: d[keyField],
         data: d[dataField],
         metadata: d,
       }))}

@@ -8,6 +8,7 @@ import VizContext, {
 import VizComponentContext, {
   VizComponentContextState,
 } from "./VizComponentContext";
+import { applyFilterItem, filterData } from "../util/filters";
 
 export interface VizComponentLinkActionProps {
   /**The `name` of the component triggering action  */
@@ -51,6 +52,7 @@ const VizComponentProvider = (props: any) => {
   const [hoverFilterItems, setHoverFilterItems] = React.useState<any>([]);
   const [innerFilterFilterItems, setInnerFilterFilterItems] =
     React.useState<any>([]);
+  const [filterFilterItems, setFilterFilterItems] = React.useState<any>([]);
 
   const innerFilterIds = React.useMemo(
     () =>
@@ -66,8 +68,12 @@ const VizComponentProvider = (props: any) => {
   );
 
   const data = React.useMemo(
-    () => getData(groupBy, fields, true, innerFilterIds),
-    [fields, getData, groupBy, innerFilterIds]
+    () =>
+      filterData(
+        getData(groupBy, fields, true, innerFilterIds),
+        filterFilterItems
+      ),
+    [fields, getData, groupBy, innerFilterIds, filterFilterItems]
   );
 
   const componentName = React.useMemo(
@@ -111,6 +117,7 @@ const VizComponentProvider = (props: any) => {
       .filter((a: any) => a.s && true);
 
     if (linkActionStates.length > 0) {
+      // console.log(`${name} 'linkActionStates'`, linkActionStates)
       setHoverFilterItems(
         _.map(
           _.filter(linkActionStates, { targetAction: "hover" }),
@@ -123,9 +130,16 @@ const VizComponentProvider = (props: any) => {
           getActionStateFilter
         )
       );
+      setFilterFilterItems((c: any) =>
+        _.map(
+          _.filter(linkActionStates, { targetAction: "filter" }),
+          getActionStateFilter
+        )
+      );
     } else {
       setHoverFilterItems((c: any) => (c.length === 0 ? c : []));
       setInnerFilterFilterItems((c: any) => (c.length === 0 ? c : []));
+      setFilterFilterItems((c: any) => (c.length === 0 ? c : []));
     }
   }, [actionStates, linkActions]);
 

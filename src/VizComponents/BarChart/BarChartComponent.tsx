@@ -11,7 +11,7 @@ export interface BarChartComponentProps {
   dataField: string;
 }
 
-const BarChartComponent = React.memo((props: any) => {
+const BarChartComponent = React.memo((props: BarChartComponentProps) => {
   const { keyField, dataField } = props;
   const c = React.useContext(VizComponentContext);
   const { data, groupBy } = c;

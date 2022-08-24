@@ -66,7 +66,6 @@ const VizProvider = (props: VizProviderProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [records, setRecords] = React.useState<VizRecordState[]>([]);
   const [ids, setIds] = React.useState<any>([]);
-  const [filterIds, setFilterIds] = React.useState<any>([]);
   const [hoveredIds, setHoveredIds] = React.useState<any>([]);
   const [actionStates, setActionStates] = React.useState<VizActionState[]>([]);
 
@@ -190,12 +189,12 @@ const VizProvider = (props: VizProviderProps) => {
       innerFilterIds?: any[]
     ) => {
       const fieldNames = [idField, ...Object.keys(fields)];
-      console.log("records", records[0]);
+      // console.log("records", records[0]);
       const d =
         groupBy === idField
           ? _.map(records, (v: any) => _.pick(v, fieldNames))
           : getAggregateData(groupBy, fields, innerFilterIds);
-      console.log("getData", d);
+      // console.log("getData", d);
       return d;
     },
     [records]
@@ -204,7 +203,6 @@ const VizProvider = (props: VizProviderProps) => {
   React.useEffect(() => {
     if (data) {
       setIds(data.map((d: any) => d[idField]));
-      setFilterIds(data.map((d: any) => d[idField]));
       setRecords(
         data.map(
           (d: any) =>
@@ -227,7 +225,6 @@ const VizProvider = (props: VizProviderProps) => {
       value={{
         isLoading: isLoading,
         ids: ids,
-        hoveredIds: hoveredIds,
         records: records,
         actionStates: actionStates,
         handleAddActionState: handleAddActionState,
