@@ -18,7 +18,7 @@ import {
 import VizComponentContext from "../VizComponentContext";
 import "leaflet/dist/leaflet.css";
 // @ts-ignore
-import mapData from "./precincts_2020.json";
+import mapGeojson from "./precincts_2020.json";
 
 export interface FeatureMapComponentProps {
   mapSource: string;
@@ -27,9 +27,7 @@ export interface FeatureMapComponentProps {
 const FeatureMapComponent = (props: FeatureMapComponentProps) => {
   const { mapSource } = props;
   const c = React.useContext(VizComponentContext);
-  const { data, groupBy, hoveredIds } = c;
-
-  const [mapDataLoading, setMapDataLoading] = React.useState(true);
+  const { data, groupBy, hoveredIds, handleMouseOver, handleMouseOut } = c;
 
   const getMapStyle = React.useCallback(
     (feature?: geojson.Feature<geojson.Geometry, any>) => ({
@@ -38,12 +36,20 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
     [hoveredIds]
   );
 
+  const onMouseOver = (event: LeafletMouseEvent) => {
+    console.log("mouseOver", event.sourceTarget.feature.properties);
+    handleMouseOver(event, event.sourceTarget.feature.properties);
+  };
+  const onMouseOut = (event: LeafletMouseEvent) => {
+    handleMouseOut(event, event.sourceTarget.feature.properties);
+  };
+
   const onEachFeature = React.useCallback(
     (feature: geojson.Feature<geojson.Geometry, any>, l: LeafletLayer) => {
       //   l.bindTooltip(precinctTooltip(feature));
       l.on({
-        mouseover: (e: any) => {},
-        mouseout: (e: any) => {},
+        mouseover: onMouseOver,
+        mouseout: onMouseOut,
         mousedown: (e: any) => {},
       });
     },
@@ -53,6 +59,23 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
   React.useEffect(() => {
     console.log("hoveredIds changed", hoveredIds);
   }, [hoveredIds]);
+
+  const mapData = React.useMemo(
+    () =>
+      data
+        .map((d: any) => ({
+          data: d,
+          feature: _.find(mapGeojson.features, {
+            properties: { id: d[groupBy] },
+          }),
+        }))
+        .filter((f: any) => f.feature && true)
+        .map((f: any) => ({
+          ...f.feature,
+          properties: { ...f.feature.properties, ...f.data },
+        })),
+    []
+  );
 
   return (
     <MapContainer
@@ -74,7 +97,7 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
       <LayerGroup>
         <GeoJSON
           //   ref={setLayer}
-          data={mapData}
+          data={{ type: "FeatureCollection", features: mapData as any }}
           onEachFeature={onEachFeature}
           style={getMapStyle}
         />
