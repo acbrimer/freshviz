@@ -3,6 +3,7 @@ import { ComponentStory, ComponentMeta } from "@storybook/react";
 import DataTable from "./DataTable";
 import VizProvider from "../../VizContext/VizProvider";
 import testData from "../test_data";
+import * as _ from "lodash";
 
 const DataTableDemo = (props: any) => {
   return (
@@ -12,33 +13,25 @@ const DataTableDemo = (props: any) => {
       idField={"precinct_id"}
     >
       <DataTable
-        name="precincts"
-        groupBy="precinct_id"
+        name="counties"
+        groupBy="county_id"
         fields={{
-          precinct_id: { value: true },
-          tot_votes: { value: true },
-          absmail_votes: { value: true },
-          winning_cand: { value: true },
           county_id: { value: true },
+          tot_votes: { sum: "tot_votes" },
+          "candidates.*.tot_votes": { sum: "tot_votes" },
+          "candidates.*.cand_number": { value: true },
         }}
-        linkActions={[
-          {
-            source: "precincts",
-            actionState: "selected",
-            sourceField: "precinct_id",
-            targetField: "precinct_id",
-            op: "eq",
-            targetAction: "select",
+        calculatedFields={{
+          county_label: {
+            name: "County label",
+            fn: (r: any) => `County ${r.county_id.toString()}`,
           },
-          {
-            source: "precincts",
-            actionState: "hovered",
-            sourceField: "precinct_id",
-            targetField: "precinct_id",
-            op: "eq",
-            targetAction: "hover",
+          winning_cand: {
+            name: "Winning cand",
+            fn: (r: any) =>
+              _.orderBy(r.candidates, ["tot_votes"], ["desc"])[0].cand_number,
           },
-        ]}
+        }}
       />
     </VizProvider>
   );

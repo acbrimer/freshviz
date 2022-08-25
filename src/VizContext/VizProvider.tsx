@@ -1,10 +1,9 @@
 import * as React from "react";
 import VizContext, {
-  VizRecordsObject,
   VizFieldFunctionType,
-  VizRecordState,
   VizActionState,
   VizComponentRecordState,
+  VizCalculatedFieldsObject,
 } from "./VizContext";
 import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
@@ -65,7 +64,7 @@ const VizProvider = (props: VizProviderProps) => {
   const { data, idField, globalIdField } = props;
 
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [records, setRecords] = React.useState<VizRecordState[]>([]);
+  const [records, setRecords] = React.useState<any[]>([]);
   const [ids, setIds] = React.useState<any>([]);
   const [hoveredRecords, setHoveredRecords] = React.useState<
     VizComponentRecordState[]
@@ -202,20 +201,11 @@ const VizProvider = (props: VizProviderProps) => {
       // add groupBy field
       dataFields[groupBy] = [{ field: groupBy, name: groupBy, agg: "value" }];
 
-      let d = _.map(
-        innerFilterIds && Array.isArray(innerFilterIds)
-          ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
-          : records,
-        flatten
-      );
-
-      d = d.map((r: any, ix: number) =>
-        Object.fromEntries(
-          Object.keys(dataFields).flatMap((df: string) =>
-            dataFields[df].map((f: any) => [f.name, r[df]])
-          )
-        )
-      );
+      // let d = (
+      //   innerFilterIds && Array.isArray(innerFilterIds)
+      //     ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
+      //     : records
+      // ).map((v) => _.pick(flatten(v), Object.keys(dataFields)));
 
       const dataFieldFunctions = Object.fromEntries(
         _.flatten(
@@ -225,13 +215,17 @@ const VizProvider = (props: VizProviderProps) => {
         )
       );
 
-      const g = _.groupBy(d, groupBy);
-
-      const res = Object.keys(g).map((k: any) =>
-        unflatten(applyAggregates(g[k], dataFieldFunctions))
+      const g = _.groupBy(
+        (innerFilterIds && Array.isArray(innerFilterIds)
+          ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
+          : records
+        ).map((v) => _.pick(flatten(v), Object.keys(dataFields))),
+        groupBy
       );
 
-      return res;
+      return Object.keys(g).map((k: any) =>
+        unflatten(applyAggregates(g[k], dataFieldFunctions))
+      );
     },
     [records, idField]
   );
@@ -240,16 +234,31 @@ const VizProvider = (props: VizProviderProps) => {
     (
       groupBy: string,
       fields: any,
-      useFilter?: boolean,
-      innerFilterIds?: any[]
+      innerFilterIds?: any[],
+      calculatedFields?: VizCalculatedFieldsObject,
+      select?: (data: any[]) => any[]
     ) => {
       const fieldNames = [idField, ...Object.keys(fields)];
       // console.log("records", records[0]);
-      const d =
+      console.log("calculatedFields", calculatedFields);
+      const d = _.map(
         groupBy === idField
           ? _.map(records, (v: any) => _.pick(v, fieldNames))
-          : getAggregateData(groupBy, fields, innerFilterIds);
-      // console.log("getData", d);
+          : getAggregateData(groupBy, fields, innerFilterIds),
+        (r: any) =>
+          calculatedFields && true
+            ? {
+                ...r,
+                ...Object.fromEntries(
+                  Object.keys(calculatedFields).map((field: string) => [
+                    field,
+                    calculatedFields[field].fn(r),
+                  ])
+                ),
+              }
+            : r
+      );
+      console.log("d", d);
       return d;
     },
     [records]
@@ -259,14 +268,11 @@ const VizProvider = (props: VizProviderProps) => {
     if (data) {
       setIds(data.map((d: any) => d[idField]));
       setRecords(
-        data.map(
-          (d: any) =>
-            ({
-              ...d,
-              id: d[idField],
-              global_id: d[globalIdField || "id"],
-            } as VizRecordState)
-        )
+        data.map((d: any) => ({
+          ...d,
+          id: d[idField],
+          global_id: d[globalIdField || "id"],
+        }))
       );
       setIsLoading(false);
     }
@@ -291,7 +297,7 @@ const VizProvider = (props: VizProviderProps) => {
         handleAddSelectedRecord: handleAddSelectedRecord,
         handleRemoveSelectedRecord: handleRemoveSelectedRecord,
         handleClearSelectedRecords: handleClearSelectedRecords,
-
+        getFilterItemIds: getFilterItemIds,
         getFilterIds: getFilterIds,
         getData: getData,
       }}

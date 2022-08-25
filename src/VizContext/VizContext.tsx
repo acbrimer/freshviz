@@ -1,44 +1,6 @@
 import { createContext } from "react";
 import { FilterItemProps } from "../util/filters";
 
-export interface VizRecordState {
-  id: string | number;
-  data: any;
-  global_id: string | number;
-  color?: any;
-  fillColor?: any;
-  opacity?: any;
-  geometry?: any;
-  select?: boolean;
-  focus?: boolean;
-  disabled?: boolean;
-  exclude?: boolean;
-  visited?: boolean;
-}
-
-export type VizRecordsObject = {
-  [id: string | number]: VizRecordState;
-};
-
-export interface VizFieldValues {
-  count?: number;
-  sum?: number;
-  avg?: number;
-  stdev?: number;
-  min?: any;
-  max?: any;
-  mode?: any;
-  median?: any;
-}
-
-export interface VizFieldState {
-  name: string;
-  label?: string;
-  description?: string;
-  values: VizFieldValues;
-  filtered_values?: VizFieldValues;
-}
-
 export type VizFieldFunctionType =
   | "sum"
   | "min"
@@ -58,6 +20,15 @@ export type VizDataFieldsObject = {
   [field: string]: VizDataFieldProps;
 };
 
+export interface VizCalculatedFieldProps {
+  name: string;
+  fn: (record: any) => any;
+}
+
+export type VizCalculatedFieldsObject = {
+  [field: string]: VizCalculatedFieldProps;
+};
+
 export interface VizActionState {
   /** Identiying key for the action state */
   key: string;
@@ -71,9 +42,17 @@ export interface VizActionState {
   data: any;
 }
 
+export interface VizGetDataProps {
+  groupBy: string;
+  fields: VizDataFieldsObject;
+  innerFilterIds?: any[];
+  calculatedFields?: VizCalculatedFieldsObject;
+  select?: (data: any[]) => any[];
+}
+
 export interface VizContextState {
   isLoading: boolean;
-  records: VizRecordState[];
+  records: any[];
   ids: (string | number)[];
 
   selectedRecords: any[];
@@ -101,12 +80,14 @@ export interface VizContextState {
   handleClearHoveredRecords: (source?: string) => void;
 
   getFilterIds: (filters: FilterItemProps[]) => any[];
+  getFilterItemIds: (filterItem: FilterItemProps) => any[];
 
   getData: (
     groupBy: string,
     fields: VizDataFieldsObject,
-    useFilter?: boolean,
-    innerFilterIds?: any[]
+    innerFilterIds?: any[],
+    calculatedFields?: VizCalculatedFieldsObject,
+    select?: (data: any[]) => any[]
   ) => any[];
 }
 
@@ -145,11 +126,13 @@ const VizContext = createContext<VizContextState>({
   handleClearHoveredRecords: (source?: string) => {},
 
   getFilterIds: (filters: FilterItemProps[]) => [],
+  getFilterItemIds: (filterItem: FilterItemProps) => [],
   getData: (
     groupBy: string,
     fields: VizDataFieldsObject,
-    useFilter?: boolean,
-    innerFilterIds?: any[]
+    innerFilterIds?: any[],
+    calculatedFields?: VizCalculatedFieldsObject,
+    select?: (data: any[]) => any[]
   ) => [],
 });
 
