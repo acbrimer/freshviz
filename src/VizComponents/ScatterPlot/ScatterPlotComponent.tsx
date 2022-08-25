@@ -26,19 +26,22 @@ const ScatterPlotComponent = (props: ScatterPlotComponentProps) => {
   const c = React.useContext(VizComponentContext);
   const { data, groupBy, hoveredIds } = c;
 
+  const ScatterSeries = React.useMemo(
+    () => (
+      <ReavizScatterSeries
+        animated={false}
+        {...ScatterSeriesProps}
+        point={<ScatterPoint />}
+      />
+    ),
+    []
+  );
   return (
     <ReavizScatterPlot
       height={300}
       width={300}
       {...ScatterPlotProps}
-      series={
-        <ReavizScatterSeries
-          animated={false}
-          {...ScatterSeriesProps}
-          activeIds={hoveredIds}
-          point={<ScatterPoint />}
-        />
-      }
+      series={ScatterSeries}
       data={data.map((d: any) => ({
         id: d[idField || groupBy],
         key: d[keyField],

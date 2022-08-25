@@ -27,7 +27,14 @@ export interface FeatureMapComponentProps {
 const FeatureMapComponent = (props: FeatureMapComponentProps) => {
   const { mapSource } = props;
   const c = React.useContext(VizComponentContext);
-  const { data, groupBy, hoveredIds, handleMouseOver, handleMouseOut } = c;
+  const {
+    data,
+    groupBy,
+    hoveredIds,
+    handleMouseOver,
+    handleMouseOut,
+    handleClick,
+  } = c;
 
   const getMapStyle = React.useCallback(
     (feature?: geojson.Feature<geojson.Geometry, any>) => ({
@@ -37,11 +44,14 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
   );
 
   const onMouseOver = (event: LeafletMouseEvent) => {
-    console.log("mouseOver", event.sourceTarget.feature.properties);
     handleMouseOver(event, event.sourceTarget.feature.properties);
   };
   const onMouseOut = (event: LeafletMouseEvent) => {
     handleMouseOut(event, event.sourceTarget.feature.properties);
+  };
+
+  const onMouseDown = (event: LeafletMouseEvent) => {
+    handleClick(event, event.sourceTarget.feature.properties);
   };
 
   const onEachFeature = React.useCallback(
@@ -50,15 +60,11 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
       l.on({
         mouseover: onMouseOver,
         mouseout: onMouseOut,
-        mousedown: (e: any) => {},
+        mousedown: onMouseDown,
       });
     },
     []
   );
-
-  React.useEffect(() => {
-    console.log("hoveredIds changed", hoveredIds);
-  }, [hoveredIds]);
 
   const mapData = React.useMemo(
     () =>
@@ -97,7 +103,7 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
       <LayerGroup>
         <GeoJSON
           //   ref={setLayer}
-          data={{ type: "FeatureCollection", features: mapData as any }}
+          data={{ type: "FeatureCollection", features: mapData } as any}
           onEachFeature={onEachFeature}
           style={getMapStyle}
         />
