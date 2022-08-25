@@ -4,6 +4,7 @@ import TestComponent from "./TestComponent";
 import BarChart from "./BarChart";
 import ScatterPlot from "./ScatterPlot";
 import FeatureMap from "./FeatureMap";
+import DataTable from "./DataTable";
 
 export {
   VizComponentContext,
@@ -12,4 +13,5 @@ export {
   TestComponent,
   ScatterPlot,
   FeatureMap,
+  DataTable,
 };

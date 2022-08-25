@@ -32,19 +32,51 @@ export interface VizComponentProviderProps {
 export type VizComponentProps = VizComponentProviderProps &
   VizComponentContextState;
 
-const getActionStateFilter = (f: any) => ({
-  field: f.targetField,
-  op: f.op,
-  value: f.s.data[f.sourceField],
-});
+const getActionStateFilter = (f: any) =>
+  f.s.length > 0
+    ? {
+        field: f.targetField,
+        op: f.op,
+        value: _.map(f.s, (v: any) => v.data[f.sourceField]),
+      }
+    : {
+        field: f.targetField,
+        op: f.op,
+        value: f.s[0].data[f.sourceField],
+      };
+
+interface TargetActionItemProps {
+  source: string;
+  target: string;
+  id: any;
+  data: any;
+  op: string;
+  sourceField: string;
+  targetField: string;
+}
+const getActionFilters = (targetActions: TargetActionItemProps[]) => {
+  let operators = _.groupBy(targetActions, "op.targetField");
+
+  const r = Object.keys(operators).reduce((acc: any, c: any) => {
+    return { ...acc };
+  }, {});
+
+  return operators;
+};
 
 const VizComponentProvider = (props: any) => {
   const { groupBy, fields, name, linkActions } = props;
   const dvc = React.useContext(VizContext);
   const {
-    handleRemoveActionState,
-    handleAddActionState,
-    actionStates,
+    hoveredRecords,
+    handleAddHoveredRecord,
+    handleRemoveHoveredRecord,
+    handleClearHoveredRecords,
+    selectedRecords,
+    handleToggleSelectedRecord,
+    handleAddSelectedRecord,
+    handleRemoveSelectedRecord,
+    handleClearSelectedRecords,
     getData,
     getFilterIds,
   } = dvc;
@@ -54,6 +86,8 @@ const VizComponentProvider = (props: any) => {
     React.useState<any>([]);
   const [filterFilterItems, setFilterFilterItems] = React.useState<any>([]);
   const [selectedFilterItems, setSelectedFilterItems] = React.useState<any>([]);
+
+  const [selectActionIds, setSelectActionIds] = React.useState<any>([]);
 
   const innerFilterIds = React.useMemo(
     () =>
@@ -65,10 +99,12 @@ const VizComponentProvider = (props: any) => {
 
   const data = React.useMemo(
     () =>
-      filterData(
-        getData(groupBy, fields, true, innerFilterIds),
-        filterFilterItems
-      ),
+      filterFilterItems && filterFilterItems.length > 0
+        ? filterData(
+            getData(groupBy, fields, true, innerFilterIds),
+            filterFilterItems
+          )
+        : getData(groupBy, fields, true, innerFilterIds),
     [fields, getData, groupBy, innerFilterIds, filterFilterItems]
   );
 
@@ -93,87 +129,107 @@ const VizComponentProvider = (props: any) => {
     [hoverFilterItems]
   );
 
-  const selectedIds = React.useMemo(
-    () =>
-      selectedFilterItems.length === 0
-        ? []
-        : getComponentFilterIds(selectedFilterItems),
-    [selectedFilterItems]
-  );
+  const selectedIds = React.useMemo(() => {
+    console.log("selectedIds", selectActionIds);
+    return selectActionIds.length === 0
+      ? []
+      : _.difference(
+          _.intersection(
+            _.reject(selectActionIds, { exculde: true }).flatMap(
+              (v: any) => v.ids
+            )
+          ),
+          _.intersection(
+            _.filter(selectActionIds, { exculde: true }).map((v: any) => v.ids)
+          )
+        );
+  }, [selectActionIds]);
 
   const componentName = React.useMemo(
     () => name || `${groupBy}_${Math.round(Math.random() * 100)}`,
     [groupBy, name]
   );
 
+  const handleClick = React.useCallback(
+    (e: any, data: any) => {
+      handleToggleSelectedRecord(componentName, data[groupBy], data);
+    },
+    [componentName, groupBy]
+  );
+
   const handleMouseOver = React.useCallback(
     (e: any, data: any) => {
-      handleAddActionState({
-        source: componentName,
-        actionState: "hovered",
-        id: data[groupBy],
-        data: data,
-      });
+      handleAddHoveredRecord(componentName, data[groupBy], data);
     },
-    [handleAddActionState, componentName, groupBy]
+    [componentName, groupBy]
   );
 
   const handleMouseOut = React.useCallback(
     (e: any, data: any) => {
-      handleRemoveActionState({
-        source: componentName,
-        actionState: "hovered",
-        id: data[groupBy],
-        data: data,
-      });
+      handleRemoveHoveredRecord(componentName, data[groupBy]);
     },
-    [componentName, groupBy, handleRemoveActionState]
+    [componentName, groupBy]
+  );
+
+  const hoveredLinkActions: VizComponentLinkActionProps[] = React.useMemo(
+    () => _.filter(linkActions, { actionState: "hovered" }),
+    [linkActions]
   );
 
   React.useLayoutEffect(() => {
-    const linkActionStates = linkActions
-      .map((a: any) => ({
-        ...a,
-        s: _.find(actionStates, {
-          source: a.source,
-          actionState: a.actionState,
-        }),
-      }))
-      .filter((a: any) => a.s && true);
-
-    if (linkActionStates.length > 0) {
-      // console.log(`${name} 'linkActionStates'`, linkActionStates)
-      setHoverFilterItems(
-        _.map(
-          _.filter(linkActionStates, { targetAction: "hover" }),
-          getActionStateFilter
-        )
+    /** Get hoveredIds */
+    if (hoveredLinkActions.length > 0) {
+      const _hoveredRecords = hoveredLinkActions.flatMap((link: any) =>
+        _.map(_.filter(hoveredRecords, { source: link.source }), (r: any) => ({
+          ...link,
+          ...r,
+        }))
       );
-      setInnerFilterFilterItems((c: any) =>
-        _.map(
-          _.filter(linkActionStates, { targetAction: "innerFilter" }),
-          getActionStateFilter
-        )
-      );
-      setFilterFilterItems((c: any) =>
-        _.map(
-          _.filter(linkActionStates, { targetAction: "filter" }),
-          getActionStateFilter
-        )
-      );
-      setSelectedFilterItems((c: any) =>
-        _.map(
-          _.filter(linkActionStates, { targetAction: "select" }),
-          getActionStateFilter
-        )
-      );
-    } else {
-      setHoverFilterItems((c: any) => (c.length === 0 ? c : []));
-      setInnerFilterFilterItems((c: any) => (c.length === 0 ? c : []));
-      setFilterFilterItems((c: any) => (c.length === 0 ? c : []));
-      setSelectedFilterItems((c: any) => (c.length === 0 ? c : []));
+      // console.log("_hoveredRecords", _hoveredRecords);
     }
-  }, [actionStates, linkActions]);
+  }, [hoveredLinkActions, hoveredRecords]);
+
+  const selectedLinkActions: VizComponentLinkActionProps[] = React.useMemo(
+    () => _.filter(linkActions, { actionState: "selected" }),
+    [linkActions]
+  );
+  React.useLayoutEffect(() => {
+    /** Get selectedIds */
+
+    const _selectedRecords = selectedLinkActions.flatMap((link: any) =>
+      _.map(_.filter(selectedRecords, { source: link.source }), (r: any) => ({
+        ...link,
+        ...r,
+      }))
+    );
+
+    if (_selectedRecords.length > 0) {
+      const targetActions = _.groupBy(_selectedRecords, "targetAction");
+      // apply select
+      if (_.has(targetActions, "select")) {
+        setSelectActionIds((current: any) => [
+          ..._.reject(current, { sourceAction: "selected" }),
+          ...targetActions.select.flatMap((s: any) => ({
+            sourceAction: "selected",
+            exclude: s.op.startsWith("x"),
+            ids:
+              s.source === componentName
+                ? [s.id]
+                : getComponentFilterItemIds(
+                    s.targetField,
+                    // @ts-ignore
+                    s.op as any,
+                    s.data[s.sourceField]
+                  ),
+          })),
+        ]);
+      }
+    } else {
+      setSelectActionIds((current: any) =>
+        _.reject(current, { sourceAction: "selected" })
+      );
+    }
+  }, [selectedLinkActions, selectedRecords]);
 
   return (
     <VizComponentContext.Provider
@@ -185,6 +241,7 @@ const VizComponentProvider = (props: any) => {
         selectedIds: selectedIds,
         handleMouseOver: handleMouseOver,
         handleMouseOut: handleMouseOut,
+        handleClick: handleClick,
       }}
     >
       {props.children}

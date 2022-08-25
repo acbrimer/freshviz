@@ -4,6 +4,7 @@ import VizContext, {
   VizFieldFunctionType,
   VizRecordState,
   VizActionState,
+  VizComponentRecordState,
 } from "./VizContext";
 import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
@@ -66,37 +67,91 @@ const VizProvider = (props: VizProviderProps) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [records, setRecords] = React.useState<VizRecordState[]>([]);
   const [ids, setIds] = React.useState<any>([]);
-  const [hoveredIds, setHoveredIds] = React.useState<any>([]);
+  const [hoveredRecords, setHoveredRecords] = React.useState<
+    VizComponentRecordState[]
+  >([]);
+  const [selectedRecords, setSelectedRecords] = React.useState<
+    VizComponentRecordState[]
+  >([]);
   const [actionStates, setActionStates] = React.useState<VizActionState[]>([]);
 
-  const onMouseOver = (id: any) => {
-    if (Array.isArray(id)) {
-      // @ts-ignore
-      setHoveredIds(id);
+  const handleToggleSelectedRecord = React.useCallback(
+    (source: string, id: number | string, data: any) => {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? _.reject(current, { source: source, id: id })
+          : [...current, { source, id, data }]
+      );
+    },
+    []
+  );
+
+  const handleAddSelectedRecord = React.useCallback(
+    (source: string, id: number | string, data: any) => {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? current
+          : [...current, { source, id, data }]
+      );
+    },
+    []
+  );
+
+  const handleRemoveSelectedRecord = React.useCallback(
+    (source: string, id: number | string) => {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? _.reject(current, { source: source, id: id })
+          : current
+      );
+    },
+    []
+  );
+
+  const handleClearSelectedRecords = React.useCallback((source?: string) => {
+    if (source) {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source })
+          ? _.reject(current, { source: source })
+          : current
+      );
     } else {
-      // @ts-ignore
-      setHoveredIds([id]);
+      setSelectedRecords([]);
     }
-  };
-
-  const onMouseOut = () => {
-    setHoveredIds([]);
-  };
-
-  const handleAddActionState = React.useCallback((s: VizActionState) => {
-    setActionStates((current: VizActionState[]) => [...current, s]);
   }, []);
 
-  const handleRemoveActionState = React.useCallback((s: VizActionState) => {
-    setActionStates((current: VizActionState[]) =>
-      _.filter(
-        current,
-        (v: VizActionState) =>
-          v.actionState !== s.actionState &&
-          v.id !== s.id &&
-          v.source !== s.source
-      )
-    );
+  const handleAddHoveredRecord = React.useCallback(
+    (source: string, id: number | string, data: any) => {
+      setHoveredRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? current
+          : [...current, { source, id, data }]
+      );
+    },
+    []
+  );
+
+  const handleRemoveHoveredRecord = React.useCallback(
+    (source: string, id: number | string) => {
+      setHoveredRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? _.reject(current, { source: source, id: id })
+          : current
+      );
+    },
+    []
+  );
+
+  const handleClearHoveredRecords = React.useCallback((source?: string) => {
+    if (source) {
+      setHoveredRecords((current) =>
+        _.find(current, { source: source })
+          ? _.reject(current, { source: source })
+          : current
+      );
+    } else {
+      setHoveredRecords([]);
+    }
   }, []);
 
   const getFilterItemIds = React.useCallback(
@@ -226,13 +281,19 @@ const VizProvider = (props: VizProviderProps) => {
         isLoading: isLoading,
         ids: ids,
         records: records,
-        actionStates: actionStates,
-        handleAddActionState: handleAddActionState,
-        handleRemoveActionState: handleRemoveActionState,
+        hoveredRecords: hoveredRecords,
+
+        handleAddHoveredRecord: handleAddHoveredRecord,
+        handleRemoveHoveredRecord: handleRemoveHoveredRecord,
+        handleClearHoveredRecords: handleClearHoveredRecords,
+        selectedRecords: selectedRecords,
+        handleToggleSelectedRecord: handleToggleSelectedRecord,
+        handleAddSelectedRecord: handleAddSelectedRecord,
+        handleRemoveSelectedRecord: handleRemoveSelectedRecord,
+        handleClearSelectedRecords: handleClearSelectedRecords,
+
         getFilterIds: getFilterIds,
         getData: getData,
-        onMouseOut: onMouseOut,
-        onMouseOver: onMouseOver,
       }}
     >
       {props.children}

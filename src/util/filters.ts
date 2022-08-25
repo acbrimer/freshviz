@@ -7,8 +7,10 @@ export const FILTER_FUNCTIONS = {
   gte: (field: string, value: any) => (v: any) => v[field] >= value,
   lt: (field: string, value: any) => (v: any) => v[field] < value,
   lte: (field: string, value: any) => (v: any) => v[field] <= value,
-  in: (field: string, value: any[]) => (v: any) => value.includes(v[field]),
-  xin: (field: string, value: any[]) => (v: any) => value.includes(v[field]),
+  in: (field: string, value: any) => (v: any) =>
+    Array.isArray(value) ? value.includes(v[field]) : value === v[field],
+  xin: (field: string, value: any) => (v: any) =>
+    Array.isArray(value) ? value.includes(v[field]) : value === v[field],
 };
 
 export interface FilterItemProps {

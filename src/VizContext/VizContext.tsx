@@ -59,6 +59,8 @@ export type VizDataFieldsObject = {
 };
 
 export interface VizActionState {
+  /** Identiying key for the action state */
+  key: string;
   /** The component triggering the action state */
   source: string;
   /** The current action applying to source */
@@ -73,12 +75,33 @@ export interface VizContextState {
   isLoading: boolean;
   records: VizRecordState[];
   ids: (string | number)[];
-  onMouseOver: (id: any) => void;
-  onMouseOut: (id: any) => void;
-  actionStates: any[];
-  handleAddActionState: (actionState: VizActionState) => void;
-  handleRemoveActionState: (actionState: VizActionState) => void;
+
+  selectedRecords: any[];
+  handleToggleSelectedRecord: (
+    source: string,
+    id: string | number,
+    data: any
+  ) => void;
+  handleAddSelectedRecord: (
+    source: string,
+    id: string | number,
+    data: any
+  ) => void;
+
+  handleRemoveSelectedRecord: (source: string, id: string | number) => void;
+  handleClearSelectedRecords: (source?: string) => void;
+
+  hoveredRecords: any[];
+  handleAddHoveredRecord: (
+    source: string,
+    id: string | number,
+    data: any
+  ) => void;
+  handleRemoveHoveredRecord: (source: string, id: string | number) => void;
+  handleClearHoveredRecords: (source?: string) => void;
+
   getFilterIds: (filters: FilterItemProps[]) => any[];
+
   getData: (
     groupBy: string,
     fields: VizDataFieldsObject,
@@ -87,15 +110,40 @@ export interface VizContextState {
   ) => any[];
 }
 
+export interface VizComponentRecordState {
+  source: string;
+  id: string | number;
+  data: any;
+}
+
 const VizContext = createContext<VizContextState>({
   isLoading: true,
   records: [],
   ids: [],
-  actionStates: [],
-  handleAddActionState: (s: any) => {},
-  handleRemoveActionState: (s: any) => {},
-  onMouseOver: (id: any) => {},
-  onMouseOut: (id: any) => {},
+  selectedRecords: [],
+  handleToggleSelectedRecord: (
+    source: string,
+    id: string | number,
+    data: any
+  ) => {},
+  handleAddSelectedRecord: (
+    source: string,
+    id: string | number,
+    data: any
+  ) => {},
+  handleRemoveSelectedRecord: (source: string, id: string | number) => {},
+  handleClearSelectedRecords: (source?: string) => {},
+
+  hoveredRecords: [],
+
+  handleAddHoveredRecord: (
+    source: string,
+    id: string | number,
+    data: any
+  ) => {},
+  handleRemoveHoveredRecord: (source: string, id: string | number) => {},
+  handleClearHoveredRecords: (source?: string) => {},
+
   getFilterIds: (filters: FilterItemProps[]) => [],
   getData: (
     groupBy: string,
