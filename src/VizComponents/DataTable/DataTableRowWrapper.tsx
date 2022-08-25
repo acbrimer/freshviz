@@ -6,8 +6,14 @@ import VizComponentContext from "../VizComponentContext";
 const DataTableRowWrapper = (props: any) => {
   const { children } = props;
   const c = React.useContext(VizComponentContext);
-  const { handleMouseOver, handleMouseOut, handleClick, selectedIds, groupBy } =
-    c;
+  const {
+    handleMouseOver,
+    handleMouseOut,
+    handleClick,
+    selectedIds,
+    hoveredIds,
+    groupBy,
+  } = c;
   const { record } = children.props;
 
   const handleRowClick = (e: any) => {
@@ -27,10 +33,16 @@ const DataTableRowWrapper = (props: any) => {
     [selectedIds]
   );
 
+  const isHovered = React.useMemo(
+    () => hoveredIds.includes(record[groupBy]),
+    [hoveredIds]
+  );
+
   const row = React.useMemo(
     () => (
       <TableRow
         {...props}
+        sx={{ backgroundColor: isHovered ? "lightyellow" : "white" }}
         selected={isSelected}
         hover
         onClick={handleRowClick}
@@ -38,7 +50,7 @@ const DataTableRowWrapper = (props: any) => {
         onMouseOut={onMouseOut}
       />
     ),
-    [isSelected]
+    [isSelected, isHovered]
   );
 
   return <>{row}</>;

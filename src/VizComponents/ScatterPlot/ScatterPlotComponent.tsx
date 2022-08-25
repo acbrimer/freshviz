@@ -20,7 +20,7 @@ export interface ScatterPlotComponentProps extends ReavizComponentCommonProps {
   >;
 }
 
-const ScatterPlotComponent = React.memo((props: ScatterPlotComponentProps) => {
+const ScatterPlotComponent = (props: ScatterPlotComponentProps) => {
   const { keyField, dataField, idField, ScatterPlotProps, ScatterSeriesProps } =
     props;
   const c = React.useContext(VizComponentContext);
@@ -47,6 +47,6 @@ const ScatterPlotComponent = React.memo((props: ScatterPlotComponentProps) => {
       }))}
     />
   );
-});
+};
 
-export default ScatterPlotComponent;
+export default React.memo(ScatterPlotComponent);

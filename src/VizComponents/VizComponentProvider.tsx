@@ -88,6 +88,7 @@ const VizComponentProvider = (props: any) => {
   const [selectedFilterItems, setSelectedFilterItems] = React.useState<any>([]);
 
   const [selectActionIds, setSelectActionIds] = React.useState<any>([]);
+  const [hoverActionIds, setHoverActionIds] = React.useState<any>([]);
 
   const innerFilterIds = React.useMemo(
     () =>
@@ -123,27 +124,39 @@ const VizComponentProvider = (props: any) => {
 
   const hoveredIds = React.useMemo(
     () =>
-      hoverFilterItems.length === 0
+      hoverActionIds.length === 0
         ? []
-        : getComponentFilterIds(hoverFilterItems),
-    [hoverFilterItems]
-  );
-
-  const selectedIds = React.useMemo(() => {
-    console.log("selectedIds", selectActionIds);
-    return selectActionIds.length === 0
-      ? []
-      : _.difference(
-          _.intersection(
-            _.reject(selectActionIds, { exculde: true }).flatMap(
-              (v: any) => v.ids
+        : _.difference(
+            _.intersection(
+              _.reject(hoverActionIds, { exculde: true }).flatMap(
+                (v: any) => v.ids
+              )
+            ),
+            _.intersection(
+              _.filter(hoverActionIds, { exculde: true }).map((v: any) => v.ids)
             )
           ),
-          _.intersection(
-            _.filter(selectActionIds, { exculde: true }).map((v: any) => v.ids)
-          )
-        );
-  }, [selectActionIds]);
+    [hoverActionIds]
+  );
+
+  const selectedIds = React.useMemo(
+    () =>
+      selectActionIds.length === 0
+        ? []
+        : _.difference(
+            _.intersection(
+              _.reject(selectActionIds, { exculde: true }).flatMap(
+                (v: any) => v.ids
+              )
+            ),
+            _.intersection(
+              _.filter(selectActionIds, { exculde: true }).map(
+                (v: any) => v.ids
+              )
+            )
+          ),
+    [selectActionIds]
+  );
 
   const componentName = React.useMemo(
     () => name || `${groupBy}_${Math.round(Math.random() * 100)}`,
@@ -176,26 +189,83 @@ const VizComponentProvider = (props: any) => {
     [linkActions]
   );
 
+  /** Handle updates from `hoveredRecords` */
   React.useLayoutEffect(() => {
-    /** Get hoveredIds */
-    if (hoveredLinkActions.length > 0) {
-      const _hoveredRecords = hoveredLinkActions.flatMap((link: any) =>
-        _.map(_.filter(hoveredRecords, { source: link.source }), (r: any) => ({
-          ...link,
-          ...r,
-        }))
+    // get current `selectedRecords` w/ `linkActions` from current component
+    const _hoveredRecords = hoveredLinkActions.flatMap((link: any) =>
+      _.map(_.filter(hoveredRecords, { source: link.source }), (r: any) => ({
+        ...link,
+        ...r,
+      }))
+    );
+
+    if (_hoveredRecords.length > 0) {
+      const targetActions = _.groupBy(_hoveredRecords, "targetAction");
+      // set hoveredActionIds
+      if (_.has(targetActions, "select")) {
+        setSelectActionIds((current: any) => [
+          ..._.reject(current, { sourceAction: "hovered" }),
+          ...targetActions.select.flatMap((s: any) => ({
+            sourceAction: "hovered",
+            exclude: s.op.startsWith("x"),
+            ids:
+              s.source === componentName
+                ? [s.id]
+                : getComponentFilterItemIds({
+                    field: s.targetField,
+                    // @ts-ignore
+                    op: s.op as any,
+                    value: s.data[s.sourceField] as any,
+                  }),
+          })),
+        ]);
+      }
+      if (_.has(targetActions, "hover")) {
+        setHoverActionIds((current: any) => [
+          ..._.reject(current, { sourceAction: "hovered" }),
+          ...targetActions.hover.flatMap((s: any) => ({
+            sourceAction: "hovered",
+            exclude: s.op.startsWith("x"),
+            ids:
+              s.source === componentName
+                ? [s.id]
+                : getComponentFilterItemIds({
+                    field: s.targetField,
+                    // @ts-ignore
+                    op: s.op as any,
+                    value: s.data[s.sourceField] as any,
+                  }),
+          })),
+        ]);
+      }
+    } else {
+      setSelectActionIds((current: any) =>
+        _.reject(current, { sourceAction: "hovered" })
       );
-      // console.log("_hoveredRecords", _hoveredRecords);
+      setHoverActionIds((current: any) =>
+        _.reject(current, { sourceAction: "hovered" })
+      );
     }
   }, [hoveredLinkActions, hoveredRecords]);
 
-  const selectedLinkActions: VizComponentLinkActionProps[] = React.useMemo(
-    () => _.filter(linkActions, { actionState: "selected" }),
-    [linkActions]
-  );
-  React.useLayoutEffect(() => {
-    /** Get selectedIds */
+  const selectedLinkActions: VizComponentLinkActionProps[] =
+    React.useMemo(() => {
+      return [
+        {
+          actionState: "selected",
+          op: "eq",
+          source: componentName,
+          sourceField: groupBy,
+          targetAction: "select",
+          targetField: groupBy,
+        },
+        ..._.filter(linkActions, { actionState: "selected" }),
+      ];
+    }, [linkActions]);
 
+  /** Handle updates from `selectedRecords` */
+  React.useLayoutEffect(() => {
+    // get current `selectedRecords` w/ `linkActions` from current component
     const _selectedRecords = selectedLinkActions.flatMap((link: any) =>
       _.map(_.filter(selectedRecords, { source: link.source }), (r: any) => ({
         ...link,
@@ -205,7 +275,7 @@ const VizComponentProvider = (props: any) => {
 
     if (_selectedRecords.length > 0) {
       const targetActions = _.groupBy(_selectedRecords, "targetAction");
-      // apply select
+      // set selectActionIds
       if (_.has(targetActions, "select")) {
         setSelectActionIds((current: any) => [
           ..._.reject(current, { sourceAction: "selected" }),
@@ -215,17 +285,38 @@ const VizComponentProvider = (props: any) => {
             ids:
               s.source === componentName
                 ? [s.id]
-                : getComponentFilterItemIds(
-                    s.targetField,
+                : getComponentFilterItemIds({
+                    field: s.targetField,
                     // @ts-ignore
-                    s.op as any,
-                    s.data[s.sourceField]
-                  ),
+                    op: s.op as any,
+                    value: s.data[s.sourceField] as any,
+                  }),
+          })),
+        ]);
+      }
+      if (_.has(targetActions, "hover")) {
+        setHoverActionIds((current: any) => [
+          ..._.reject(current, { sourceAction: "selected" }),
+          ...targetActions.hover.flatMap((s: any) => ({
+            sourceAction: "selected",
+            exclude: s.op.startsWith("x"),
+            ids:
+              s.source === componentName
+                ? [s.id]
+                : getComponentFilterItemIds({
+                    field: s.targetField,
+                    // @ts-ignore
+                    op: s.op as any,
+                    value: s.data[s.sourceField] as any,
+                  }),
           })),
         ]);
       }
     } else {
       setSelectActionIds((current: any) =>
+        _.reject(current, { sourceAction: "selected" })
+      );
+      setHoverActionIds((current: any) =>
         _.reject(current, { sourceAction: "selected" })
       );
     }
