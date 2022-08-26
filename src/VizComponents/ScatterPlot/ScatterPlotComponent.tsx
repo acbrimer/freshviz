@@ -38,8 +38,8 @@ const ScatterPlotComponent = (props: ScatterPlotComponentProps) => {
   );
   return (
     <ReavizScatterPlot
-      height={300}
-      width={300}
+      height={500}
+      width={500}
       {...ScatterPlotProps}
       series={ScatterSeries}
       data={data.map((d: any) => ({

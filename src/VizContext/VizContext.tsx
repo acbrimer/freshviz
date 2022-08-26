@@ -10,10 +10,16 @@ export type VizFieldFunctionType =
   | "countd"
   | "list"
   | "listd"
-  | "value";
+  | "value"
+  | "stdev"
+  | "zs";
 
 export type VizDataFieldProps = {
   [k in VizFieldFunctionType]?: boolean | string;
+};
+
+export type VizDataFieldFuctionsObject = {
+  [k in VizFieldFunctionType]?: (vals: any[]) => any;
 };
 
 export type VizDataFieldsObject = {

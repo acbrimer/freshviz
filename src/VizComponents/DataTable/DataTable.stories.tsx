@@ -5,7 +5,7 @@ import VizProvider from "../../VizContext/VizProvider";
 import testData from "../test_data";
 import * as _ from "lodash";
 
-const DataTableDemo = (props: any) => {
+const CountiesDemo = (props: any) => {
   return (
     <VizProvider
       isLoading={false}
@@ -31,6 +31,25 @@ const DataTableDemo = (props: any) => {
             fn: (r: any) =>
               _.orderBy(r.candidates, ["tot_votes"], ["desc"])[0].cand_number,
           },
+        }}
+      />
+    </VizProvider>
+  );
+};
+
+const DataTableDemo = (props: any) => {
+  return (
+    <VizProvider
+      isLoading={false}
+      data={testData as any[]}
+      idField={"precinct_id"}
+    >
+      <DataTable
+        name="precincts"
+        groupBy="precinct_id"
+        fields={{
+          county_id: { value: true },
+          tot_votes: { value: true, zs: "tot_votes_z" },
         }}
       />
     </VizProvider>

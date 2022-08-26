@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import { VizFieldFunctionType } from "./VizContext";
+import { VizDataFieldFuctionsObject } from "./VizContext";
 
 const countFn = (vals: any[]) => {
   //   console.log("count", vals);
@@ -9,7 +9,7 @@ const countFn = (vals: any[]) => {
 // @ts-ignore
 const countDistinctFn = (vals: any[]) => [...new Set(vals)].length;
 
-const stdevFn = (vals: any[]) => {
+export const stdevFn = (vals: any[]) => {
   const avg = _.mean(vals);
   return Math.sqrt(
     _.sum(_.map(vals, (i) => Math.pow(i - avg, 2))) / vals.length
@@ -35,4 +35,4 @@ export default {
   list: listFn,
   listd: listDistinctFn,
   value: valueFn,
-} as { [k in VizFieldFunctionType]: any };
+} as VizDataFieldFuctionsObject;

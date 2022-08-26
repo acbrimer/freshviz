@@ -9,7 +9,6 @@ import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
 import AGG_FUNCTIONS from "./vizFieldFunctions";
 import { FilterItemProps, applyFilterItem } from "../util/filters";
-
 /**
  * aggFieldName
  * Needed to pepend agg in correct place for flattened array/nested values
@@ -169,15 +168,17 @@ const VizProvider = (props: VizProviderProps) => {
   const getAggregateData = React.useCallback(
     (groupBy: string, fields: any, innerFilterIds?: any[]) => {
       const aggFields = Object.keys(fields).flatMap((k: any) =>
-        Object.keys(fields[k]).map((a: string) => ({
-          field: k,
-          agg: a,
-          name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
-          re: getRegExp(k),
-          fn: _.has(AGG_FUNCTIONS, a)
-            ? AGG_FUNCTIONS[a as VizFieldFunctionType]
-            : null,
-        }))
+        Object.keys(fields[k])
+          .filter((a: any) => a !== "zs")
+          .map((a: string) => ({
+            field: k,
+            agg: a,
+            name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
+            re: getRegExp(k),
+            fn: _.has(AGG_FUNCTIONS, a)
+              ? AGG_FUNCTIONS[a as VizFieldFunctionType]
+              : null,
+          }))
       );
 
       const pickFields = (val: any, k: string) =>
@@ -200,12 +201,6 @@ const VizProvider = (props: VizProviderProps) => {
       );
       // add groupBy field
       dataFields[groupBy] = [{ field: groupBy, name: groupBy, agg: "value" }];
-
-      // let d = (
-      //   innerFilterIds && Array.isArray(innerFilterIds)
-      //     ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
-      //     : records
-      // ).map((v) => _.pick(flatten(v), Object.keys(dataFields)));
 
       const dataFieldFunctions = Object.fromEntries(
         _.flatten(
@@ -240,8 +235,7 @@ const VizProvider = (props: VizProviderProps) => {
     ) => {
       const fieldNames = [idField, ...Object.keys(fields)];
       // console.log("records", records[0]);
-      console.log("calculatedFields", calculatedFields);
-      const d = _.map(
+      let d = _.map(
         groupBy === idField
           ? _.map(records, (v: any) => _.pick(v, fieldNames))
           : getAggregateData(groupBy, fields, innerFilterIds),
@@ -258,7 +252,27 @@ const VizProvider = (props: VizProviderProps) => {
               }
             : r
       );
-      console.log("d", d);
+      const applyZscores = Object.keys(fields)
+        .filter((f: string) => _.has(fields[f], "zs"))
+        .map((f: any) => ({
+          field: f,
+          name: fields[f].zs === true ? f : fields[f].zs,
+          avg: AGG_FUNCTIONS.avg(d.map((r: any) => r[f])),
+          stdev: AGG_FUNCTIONS.stdev(d.map((r: any) => r[f])),
+        }));
+      console.log("applyZscores", applyZscores);
+      if (applyZscores && applyZscores.length > 0) {
+        return d.map((r: any) => ({
+          ...r,
+          ...Object.fromEntries(
+            applyZscores.map((zf: any) => [
+              zf.name,
+              (r[zf.field] - zf.avg) / zf.stdev,
+            ])
+          ),
+        }));
+      }
+
       return d;
     },
     [records]
