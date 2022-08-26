@@ -4,6 +4,8 @@ import VizContext, {
   VizActionState,
   VizComponentRecordState,
   VizCalculatedFieldsObject,
+  VizComponentSortState,
+  VizSortState,
 } from "./VizContext";
 import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
@@ -71,7 +73,25 @@ const VizProvider = (props: VizProviderProps) => {
   const [selectedRecords, setSelectedRecords] = React.useState<
     VizComponentRecordState[]
   >([]);
-  const [actionStates, setActionStates] = React.useState<VizActionState[]>([]);
+
+  const [componentSortStates, setComponentSortStates] = React.useState<
+    VizComponentSortState[]
+  >([]);
+
+  const updateComponentSort = React.useCallback(
+    (component: string, sort: VizSortState) => {
+      console.log("update component sort", { component, sort });
+      setComponentSortStates((current) =>
+        _.find(current, { component: component })
+          ? [
+              ..._.reject(current, { component: component }),
+              { component: component, sort: sort },
+            ]
+          : [...current, { component: component, sort: sort }]
+      );
+    },
+    []
+  );
 
   const handleToggleSelectedRecord = React.useCallback(
     (source: string, id: number | string, data: any) => {
@@ -301,8 +321,9 @@ const VizProvider = (props: VizProviderProps) => {
         isLoading: isLoading,
         ids: ids,
         records: records,
+        componentSortStates: componentSortStates,
+        updateComponentSort: updateComponentSort,
         hoveredRecords: hoveredRecords,
-
         handleAddHoveredRecord: handleAddHoveredRecord,
         handleRemoveHoveredRecord: handleRemoveHoveredRecord,
         handleClearHoveredRecords: handleClearHoveredRecords,

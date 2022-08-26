@@ -20,6 +20,7 @@ const DataTable = (props: DataTableProps) => {
     name,
     style,
   } = props;
+
   return (
     <VizComponentProvider
       groupBy={groupBy}

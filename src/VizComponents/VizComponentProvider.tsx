@@ -4,6 +4,7 @@ import VizContext, {
   VizContextState,
   VizDataFieldsObject,
   VizActionState,
+  VizSortState,
   VizGetDataProps,
 } from "../VizContext/VizContext";
 import VizComponentContext, {
@@ -66,6 +67,8 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
     handleToggleSelectedRecord,
     getData,
     getFilterItemIds,
+    componentSortStates,
+    updateComponentSort,
   } = dvc;
 
   const [selectActionIds, setSelectActionIds] = React.useState<any>([]);
@@ -74,6 +77,24 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
     []
   );
   const [filterActionIds, setFilterActionIds] = React.useState<any>([]);
+
+  const sort = React.useMemo(
+    () =>
+      (
+        _.find(componentSortStates, { component: name }) || {
+          component: name,
+          sort: { [groupBy]: "asc" },
+        }
+      ).sort,
+    [componentSortStates, name]
+  );
+
+  const handleUpdateSort = React.useCallback(
+    (e: any, sort: VizSortState) => {
+      updateComponentSort(name, sort);
+    },
+    [name]
+  );
 
   const innerFilterIds = React.useMemo(
     () =>
@@ -283,6 +304,8 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
         name: name,
         data: data,
         groupBy: groupBy,
+        sort: sort,
+        handleUpdateSort: handleUpdateSort,
         hoveredIds: hoveredIds,
         selectedIds: selectedIds,
         handleMouseOver: handleMouseOver,

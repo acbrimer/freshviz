@@ -56,10 +56,17 @@ export interface VizGetDataProps {
   select?: (data: any[]) => any[];
 }
 
+export type VizSortState = { [field: string]: "asc" | "desc" };
+
+export type VizComponentSortState = { component: string; sort: VizSortState };
+
 export interface VizContextState {
   isLoading: boolean;
   records: any[];
   ids: (string | number)[];
+
+  componentSortStates: VizComponentSortState[];
+  updateComponentSort: (component: string, sort: VizSortState) => void;
 
   selectedRecords: any[];
   handleToggleSelectedRecord: (
@@ -108,6 +115,8 @@ const VizContext = createContext<VizContextState>({
   records: [],
   ids: [],
   selectedRecords: [],
+  componentSortStates: [],
+  updateComponentSort: (component: string, sort: VizSortState) => {},
   handleToggleSelectedRecord: (
     source: string,
     id: string | number,

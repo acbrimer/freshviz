@@ -8,25 +8,29 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import VizComponentContext from "../VizComponentContext";
+
 import DataTableRow from "./DataTableRow";
 import DataTableHeader from "./DataTableHeader";
 import DataTableRowWrapper from "./DataTableRowWrapper";
 
 export interface DataTableComponentProps {
   style?: React.CSSProperties;
-  sort?: { [field: string]: "asc" | "desc" };
 }
 
-const DataTableComponent = (props: any) => {
-  const { style, sort } = props;
+const DataTableComponent = (props: DataTableComponentProps) => {
+  const { style } = props;
   const c = React.useContext(VizComponentContext);
-  const { data, groupBy } = c;
+  const { data, groupBy, sort } = c;
 
   const table = React.useMemo(
     () => (
       <TableVirtuoso
         style={{ height: 400, ...style }}
-        data={data}
+        data={
+          sort && Object.keys(sort).length > 0
+            ? _.orderBy(data, Object.keys(sort), Object.values(sort))
+            : data
+        }
         components={{
           Scroller: React.forwardRef((props, ref) =>
             React.useMemo(
@@ -52,7 +56,7 @@ const DataTableComponent = (props: any) => {
         itemContent={(ix, record) => <DataTableRow ix={ix} record={record} />}
       />
     ),
-    [data]
+    [data, sort]
   );
 
   return <>{table}</>;
