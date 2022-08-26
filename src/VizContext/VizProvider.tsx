@@ -80,7 +80,6 @@ const VizProvider = (props: VizProviderProps) => {
 
   const updateComponentSort = React.useCallback(
     (component: string, sort: VizSortState) => {
-      console.log("update component sort", { component, sort });
       setComponentSortStates((current) =>
         _.find(current, { component: component })
           ? [
@@ -280,7 +279,7 @@ const VizProvider = (props: VizProviderProps) => {
           avg: AGG_FUNCTIONS.avg(d.map((r: any) => r[f])),
           stdev: AGG_FUNCTIONS.stdev(d.map((r: any) => r[f])),
         }));
-      console.log("applyZscores", applyZscores);
+
       if (applyZscores && applyZscores.length > 0) {
         return d.map((r: any) => ({
           ...r,
@@ -310,6 +309,13 @@ const VizProvider = (props: VizProviderProps) => {
       );
       setIsLoading(false);
     }
+    return () => {
+      console.log("unmount state", {
+        selectedRecords,
+        hoveredRecords,
+        componentSortStates,
+      });
+    };
   }, [data, globalIdField, idField]);
 
   if (props.isLoading || isLoading) {

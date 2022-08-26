@@ -5,6 +5,8 @@ import DataTable from "./DataTable";
 import VizProvider from "../../VizContext/VizProvider";
 import FeatureMap from "../FeatureMap";
 import testData from "../test_data";
+// @ts-ignore
+import testGeojson from "../FeatureMap/testGeojson";
 
 const DataTableCrossfilter = (props: any) => {
   return (
@@ -16,7 +18,7 @@ const DataTableCrossfilter = (props: any) => {
       <Box display="flex" flexDirection="row">
         <Box width="50%" p={1}>
           <FeatureMap
-            mapSource=""
+            mapGeojson={testGeojson}
             name="precincts"
             groupBy="precinct_id"
             fields={{
@@ -26,6 +28,14 @@ const DataTableCrossfilter = (props: any) => {
               winning_cand: { value: true },
             }}
             linkActions={[
+              {
+                source: "counties",
+                actionState: "selected",
+                sourceField: "county_id",
+                targetField: "county_id",
+                op: "eq",
+                targetAction: "focus",
+              },
               {
                 source: "counties",
                 actionState: "selected",

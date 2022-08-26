@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as _ from "lodash";
-import { TableVirtuoso } from "react-virtuoso";
+import { TableVirtuoso, TableVirtuosoHandle } from "react-virtuoso";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
@@ -20,11 +20,29 @@ export interface DataTableComponentProps {
 const DataTableComponent = (props: DataTableComponentProps) => {
   const { style } = props;
   const c = React.useContext(VizComponentContext);
-  const { data, groupBy, sort } = c;
+  const { data, groupBy, sort, focusIds, clearFocusActions } = c;
+  const tableRef = React.useRef<TableVirtuosoHandle>();
+
+  const getIdIndex = React.useCallback(
+    (id: any) =>
+      _.indexOf(
+        (sort && Object.keys(sort).length > 0
+          ? _.orderBy(data, Object.keys(sort), Object.values(sort))
+          : data
+        ).map((r: any) => r[groupBy]),
+        id
+      ),
+    [sort, data]
+  );
 
   const table = React.useMemo(
     () => (
       <TableVirtuoso
+        overscan={{
+          main: 100,
+          reverse: 100,
+        }}
+        ref={tableRef}
         style={{ height: 400, ...style }}
         data={
           sort && Object.keys(sort).length > 0
@@ -58,6 +76,16 @@ const DataTableComponent = (props: DataTableComponentProps) => {
     ),
     [data, sort]
   );
+
+  React.useLayoutEffect(() => {
+    if (tableRef.current && focusIds && focusIds.length > 0) {
+      const ix = getIdIndex(focusIds[0]);
+      if (ix !== -1) {
+        tableRef.current.scrollToIndex(ix);
+      }
+      clearFocusActions();
+    }
+  }, [getIdIndex, focusIds]);
 
   return <>{table}</>;
 };

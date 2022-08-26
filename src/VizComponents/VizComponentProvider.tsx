@@ -77,6 +77,7 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
     []
   );
   const [filterActionIds, setFilterActionIds] = React.useState<any>([]);
+  const [focusActionIds, setFocusActionIds] = React.useState<any>([]);
 
   const sort = React.useMemo(
     () =>
@@ -132,6 +133,14 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
     () => mergeActionFilterIds(hoverActionIds),
     [hoverActionIds]
   );
+
+  const focusIds = React.useMemo(
+    () =>
+      focusActionIds.length === 0 ? null : mergeActionFilterIds(focusActionIds),
+    [focusActionIds]
+  );
+
+  const clearFocusActions = () => setFocusActionIds([]);
 
   const selectedIds = React.useMemo(
     () => mergeActionFilterIds(selectActionIds),
@@ -218,6 +227,24 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
             })),
           ]);
         }
+        if (_.has(targetActions, "focus")) {
+          setFocusActionIds((current: any) => [
+            ..._.reject(current, { sourceAction: sourceAction }),
+            ...targetActions.focus.flatMap((s: any) => ({
+              sourceAction: sourceAction,
+              exclude: s.op.startsWith("x"),
+              ids:
+                s.source === name
+                  ? [s.id]
+                  : getComponentFilterItemIds({
+                      field: s.targetField,
+                      // @ts-ignore
+                      op: s.op as any,
+                      value: s.data[s.sourceField] as any,
+                    }),
+            })),
+          ]);
+        }
         if (_.has(targetActions, "innerFilter")) {
           setInnerFilterActionIds((current: any) => [
             ..._.reject(current, { sourceAction: sourceAction }),
@@ -247,6 +274,9 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
           _.reject(current, { sourceAction: sourceAction })
         );
         setFilterActionIds((current: any) =>
+          _.reject(current, { sourceAction: sourceAction })
+        );
+        setFocusActionIds((current: any) =>
           _.reject(current, { sourceAction: sourceAction })
         );
       }
@@ -305,6 +335,8 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
         data: data,
         groupBy: groupBy,
         sort: sort,
+        focusIds: focusIds,
+        clearFocusActions: clearFocusActions,
         handleUpdateSort: handleUpdateSort,
         hoveredIds: hoveredIds,
         selectedIds: selectedIds,

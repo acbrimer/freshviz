@@ -7,6 +7,8 @@ export interface VizComponentContextState {
   data: any[];
   hoveredIds: any[];
   selectedIds: any[];
+  focusIds?: any[];
+  clearFocusActions: () => void;
   handleMouseOver: (e: any, data?: any) => void;
   handleMouseOut: (e: any, data?: any) => void;
   handleClick: (e: any, data?: any) => void;
@@ -22,6 +24,8 @@ const VizComponentContext = createContext<VizComponentContextState>({
   hoveredIds: [],
   selectedIds: [],
   sort: {},
+  focusIds: null,
+  clearFocusActions: () => {},
   handleUpdateSort: (e: any, VizSortState) => {},
   handleMouseOver: (e: any, data?: any) => {},
   handleMouseOut: (e: any, data?: any) => {},

@@ -50,7 +50,7 @@ const DataTableCrossfilter = (props: any) => {
                 sourceField: "county_id",
                 targetField: "county_id",
                 op: "eq",
-                targetAction: "hover",
+                targetAction: "focus",
               },
             ]}
           />

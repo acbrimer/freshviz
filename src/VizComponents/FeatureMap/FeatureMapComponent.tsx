@@ -11,6 +11,8 @@ import {
   LayerGroup,
 } from "react-leaflet";
 import {
+  Map as LeafletMap,
+  GeoJSON as LeafletGeoJSON,
   Layer as LeafletLayer,
   LeafletMouseEvent,
   latLngBounds,
@@ -18,15 +20,15 @@ import {
 import VizComponentContext from "../VizComponentContext";
 import "leaflet/dist/leaflet.css";
 // @ts-ignore
-import mapGeojson from "./precincts_2020.json";
+import testMapData from "./precincts_2020.json";
 
 export interface FeatureMapComponentProps {
-  mapSource: string;
+  mapGeojson?: any;
 }
 
 const FeatureMapComponent = (props: FeatureMapComponentProps) => {
-  const { mapSource } = props;
-  const c = React.useContext(VizComponentContext);
+  const mapGeojson = props.mapGeojson || testMapData;
+
   const {
     data,
     groupBy,
@@ -34,7 +36,12 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
     handleMouseOver,
     handleMouseOut,
     handleClick,
-  } = c;
+    focusIds,
+    clearFocusActions,
+  } = React.useContext(VizComponentContext);
+
+  const mapRef = React.useRef<LeafletMap>();
+  const layerRef = React.useRef<LeafletGeoJSON>();
 
   const getMapStyle = React.useCallback(
     (feature?: geojson.Feature<geojson.Geometry, any>) => ({
@@ -66,23 +73,50 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
     []
   );
 
+  React.useLayoutEffect(() => {
+    if (mapRef.current && layerRef.current && focusIds && focusIds.length > 0) {
+      try {
+        mapRef.current.fitBounds(
+          latLngBounds(
+            layerRef.current
+              .getLayers()
+              .filter((layer: any) =>
+                focusIds.includes(layer.feature.properties[groupBy])
+              )
+              .map((layer: any) => layer.getBounds())
+          )
+        );
+      } catch (e: any) {
+        console.warn(
+          "Could not get bounds for current focusIds in `FeatureMap`"
+        );
+      }
+      clearFocusActions();
+    }
+  }, [focusIds]);
+
   const mapData = React.useMemo(
     () =>
-      data
-        .map((d: any) => ({
-          data: d,
-          feature: _.find(mapGeojson.features, {
-            properties: { id: d[groupBy] },
-          }),
-        }))
-        .filter((f: any) => f.feature && true)
-        .map((f: any) => ({
-          ...f.feature,
-          properties: { ...f.feature.properties, ...f.data },
-        })),
-    []
+      mapGeojson && true
+        ? data
+            .map((d: any) => ({
+              data: d,
+              feature: _.find(mapGeojson.features, {
+                properties: { id: d[groupBy] },
+              }),
+            }))
+            .filter((f: any) => f.feature && true)
+            .map((f: any) => ({
+              ...f.feature,
+              properties: { ...f.feature.properties, ...f.data },
+            }))
+        : [],
+    [mapGeojson]
   );
 
+  if (!mapGeojson) {
+    return <p>Map loading...</p>;
+  }
   return (
     <MapContainer
       style={{ width: "100%", height: "100%" }}
@@ -94,7 +128,7 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
         { lat: 37.00231831600007, lng: -94.43066908599997 },
         { lat: 33.61579299500005, lng: -103.00246431499994 }
       ).pad(0.1)}
-      //   ref={setMap}
+      ref={mapRef}
     >
       <TileLayer
         attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
@@ -102,7 +136,7 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
       />
       <LayerGroup>
         <GeoJSON
-          //   ref={setLayer}
+          ref={layerRef}
           data={{ type: "FeatureCollection", features: mapData } as any}
           onEachFeature={onEachFeature}
           style={getMapStyle}
