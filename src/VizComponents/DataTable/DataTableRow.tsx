@@ -1,38 +1,27 @@
 import * as React from "react";
-
+import Typography from "@mui/material/Typography";
 import TableCell from "@mui/material/TableCell";
 import { styled } from "@mui/system";
-
-const SubList = styled("ul")(() => ({
-  listStyle: "none",
-}));
-
-const SubListItem = styled("li")(() => ({
-  fontSize: "0.75rem",
-  lineHeight: 1,
-}));
+import { VizComponentFieldDefinition } from "../VizComponentContext";
 
 interface DataTableRowProps {
   record: any;
   ix: number;
+  fieldDefinitions: VizComponentFieldDefinition[];
 }
 const DataTableRow = (props: DataTableRowProps) => {
-  const { record } = props;
+  const { record, fieldDefinitions } = props;
   return (
     <>
-      {Object.values(record).map((v: any) =>
-        Array.isArray(v) ? (
-          <TableCell>
-            <SubList>
-              {v.map((s: any) => (
-                <SubListItem>{JSON.stringify(s, null, 2)}</SubListItem>
-              ))}
-            </SubList>
-          </TableCell>
-        ) : (
-          <TableCell>{v}</TableCell>
-        )
-      )}
+      {fieldDefinitions.map((field: VizComponentFieldDefinition) => (
+        <TableCell>
+          {React.createElement(field.valueComponent, {
+            value: record[field.name],
+            source: field.name,
+            valueType: field.valueType,
+          })}
+        </TableCell>
+      ))}
     </>
   );
 };

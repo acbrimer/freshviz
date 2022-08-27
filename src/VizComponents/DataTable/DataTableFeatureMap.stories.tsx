@@ -24,7 +24,7 @@ const DataTableCrossfilter = (props: any) => {
             fields={{
               precinct_id: { value: true },
               county_id: { value: true },
-              tot_votes: { value: true },
+              tot_votes: { value: true, zs: "z-score" },
               winning_cand: { value: true },
             }}
             linkActions={[
@@ -34,15 +34,7 @@ const DataTableCrossfilter = (props: any) => {
                 sourceField: "county_id",
                 targetField: "county_id",
                 op: "eq",
-                targetAction: "focus",
-              },
-              {
-                source: "counties",
-                actionState: "selected",
-                sourceField: "county_id",
-                targetField: "county_id",
-                op: "eq",
-                targetAction: "hover",
+                targetAction: "filter",
               },
               {
                 source: "counties",
@@ -58,18 +50,18 @@ const DataTableCrossfilter = (props: any) => {
         <Box width="50%" p={1}>
           <DataTable
             name="counties"
-            groupBy="county_id"
+            groupBy="precinct_id"
             fields={{
               county_id: { value: true },
-              tot_votes: { sum: "tot_votes" },
-              precinct_id: { count: "tot_precincts" },
+              tot_votes: { value: "tot_votes" },
+              precinct_id: { value: true },
             }}
             linkActions={[
               {
                 source: "precincts",
                 actionState: "hovered",
-                sourceField: "county_id",
-                targetField: "county_id",
+                sourceField: "precinct_id",
+                targetField: "precinct_id",
                 op: "eq",
                 targetAction: "hover",
               },

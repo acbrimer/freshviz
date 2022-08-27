@@ -1,60 +1,53 @@
 import * as React from "react";
-import VizComponentContext from "../VizComponentContext";
+
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
-import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 
-interface DataTableHeaderProps {
-  fields: any[];
+import VizComponentContext, {
+  VizComponentFieldDefinition,
+} from "../VizComponentContext";
+
+import DataTableSortButton from "./DataTableSortButton";
+
+interface DataTableHeaderCellProps {
+  field: VizComponentFieldDefinition;
 }
 
-const DataTableHeaderCell = (props: any) => {
+const DataTableHeaderCell = (props: DataTableHeaderCellProps) => {
   const { field } = props;
-  const { handleUpdateSort, sort } = React.useContext(VizComponentContext);
-
-  const currentSort = React.useMemo(
-    () => (Object.keys(sort).includes(field) ? sort[field] : null),
-    [sort]
-  );
-
-  const updateSort = React.useCallback(
-    (e: any) => {
-      handleUpdateSort(e, { [field]: currentSort === "asc" ? "desc" : "asc" });
-    },
-    [currentSort]
-  );
 
   return (
     <TableCell sx={{ background: "white" }}>
       <Box display="flex" flexDirection="row">
-        <Typography variant="subtitle1">{field}</Typography>
-        <IconButton
-          onClick={updateSort}
-          color={currentSort && true ? "primary" : "default"}
-          size="small"
+        <Box display="inline-flex" flexGrow={1} alignSelf="flex-end">
+          <Typography variant="caption">{field.label}</Typography>
+        </Box>
+        <Box
+          display="inline-flex"
+          alignSelf="center"
+          maxHeight={28}
+          flexGrow={1}
+          width={28}
+          maxWidth={28}
         >
-          <ArrowDropUpIcon
-            sx={{
-              transform:
-                currentSort === "desc" ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "all 0.3s ease-out",
-            }}
-            fontSize="inherit"
-          />
-        </IconButton>
+          <DataTableSortButton field={field} />
+        </Box>
       </Box>
     </TableCell>
   );
 };
 
-const DataTableRow = (props: DataTableHeaderProps) => {
-  const { fields } = props;
+const DataTableRow = () => {
+  const { fieldDefinitions } = React.useContext(VizComponentContext);
+
+  React.useEffect(() => {
+    console.log("fieldDefinitions", fieldDefinitions);
+  }, [fieldDefinitions]);
   return (
     <TableRow>
-      {fields.map((v: any) => (
+      {fieldDefinitions.map((v: VizComponentFieldDefinition) => (
         <DataTableHeaderCell key={`header-cell-${v}`} field={v} />
       ))}
     </TableRow>

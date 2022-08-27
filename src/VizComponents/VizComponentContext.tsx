@@ -1,5 +1,19 @@
 import { createContext } from "react";
 import { VizSortState } from "../VizContext/VizContext";
+import { VizFieldType } from "../VizContext/vizFieldFunctions";
+
+export interface VizComponentFieldDefinition {
+  name: string;
+  fieldType: "calculation" | "value" | "aggregation";
+  valueType: "measure" | "dimension";
+  dataType: VizFieldType;
+  function: string;
+  label: string;
+  order: number;
+  labelComponent: any;
+  valueComponent: any;
+  description: string;
+}
 
 export interface VizComponentContextState {
   name: string;
@@ -9,6 +23,7 @@ export interface VizComponentContextState {
   selectedIds: any[];
   focusIds?: any[];
   clearFocusActions: () => void;
+  fieldDefinitions: VizComponentFieldDefinition[];
   handleMouseOver: (e: any, data?: any) => void;
   handleMouseOut: (e: any, data?: any) => void;
   handleClick: (e: any, data?: any) => void;
@@ -25,6 +40,7 @@ const VizComponentContext = createContext<VizComponentContextState>({
   selectedIds: [],
   sort: {},
   focusIds: null,
+  fieldDefinitions: [],
   clearFocusActions: () => {},
   handleUpdateSort: (e: any, VizSortState) => {},
   handleMouseOver: (e: any, data?: any) => {},

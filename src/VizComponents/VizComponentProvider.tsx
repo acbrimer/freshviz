@@ -9,8 +9,15 @@ import VizContext, {
 } from "../VizContext/VizContext";
 import VizComponentContext, {
   VizComponentContextState,
+  VizComponentFieldDefinition,
 } from "./VizComponentContext";
+import {
+  aggFieldName,
+  getValueDataType,
+  guessFieldValueType,
+} from "../VizContext/vizFieldFunctions";
 import { applyFilterItem, filterData, FilterItemProps } from "../util/filters";
+import ValueDisplayFields from "./ValueDisplayFields";
 
 export interface VizComponentLinkActionProps {
   /**The `name` of the component triggering action  */
@@ -328,6 +335,116 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
     updateTargetActionIds(selectedSourceActions, "selected");
   }, [selectedLinkActions, selectedRecords]);
 
+  const dataTotals = React.useMemo(() => {
+    console.log("dataTotals");
+    return Object.fromEntries(
+      Object.keys(data[0])
+        .map((f: any) => [f, data.map((v: any) => v[f])])
+        .map((f: any) => [
+          f[0],
+          {
+            min: _.min(f[1]),
+            max: _.max(f[1]),
+            avg: _.mean(f[1]),
+            count: f[1].filter((v: any) => v !== null).length,
+          },
+        ])
+    );
+  }, [data]);
+
+  const getFieldDataType = React.useCallback(
+    (fieldName: any) => {
+      if (_.reject(data, { [fieldName]: null }).length === 0) {
+        return "null" as string;
+      }
+      return _.head(
+        _(data.map((r: any) => r[fieldName]).filter((v: any) => v !== null))
+          .shuffle()
+          .slice(0, 99)
+          .map((v: any) => getValueDataType(v))
+          .countBy()
+          .entries()
+          .maxBy(_.last)
+      ) as string;
+    },
+    [data]
+  );
+
+  const fieldDefinitions = React.useMemo(() => {
+    const aggFields = Object.keys(fields).flatMap((k: any) =>
+      Object.keys(fields[k]).map((a: string) => {
+        const fieldName =
+          fields[k][a] === true ? aggFieldName(k, a) : fields[k][a];
+        const fieldDefinition =
+          typeof fields[k][a] === "object" ? fields[k][a] : false;
+        const label =
+          fieldDefinition && fieldDefinition.label
+            ? fieldDefinition.label
+            : fieldName.startsWith("__")
+            ? fieldName.slice(2).replace("_", " ")
+            : fieldName.replace("_", " ");
+        const order =
+          fieldDefinition && fieldDefinition.order
+            ? fieldDefinition.order
+            : fieldName === groupBy
+            ? 0
+            : 10;
+        return {
+          name: fieldName,
+          fieldType: a === "value" ? "value" : "aggregation",
+          function: a,
+          label: label,
+          order: order,
+          labelComponent: fieldDefinition.labelComponent || null,
+          valueComponent: fieldDefinition.valueComponent || null,
+          description:
+            fieldDefinition && fieldDefinition.description
+              ? fieldDefinition.description
+              : `${a} of \`${label}\``,
+        };
+      })
+    );
+
+    const calcFields =
+      calculatedFields &&
+      Object.keys(calculatedFields).map((f: any) => ({
+        name: f,
+        fieldType: "calculation",
+        valueType: calculatedFields[f].valueType || null,
+        function: calculatedFields[f].fn.toString(),
+        label: calculatedFields[f].label || f.replace("_", " "),
+        order: calculatedFields[f].order || 20,
+        labelComponent: calculatedFields[f].labelComponent || null,
+        valueComponent: calculatedFields[f].valueComponent || null,
+        description:
+          calculatedFields[f].description || `Calculated field \`${f}\``,
+      }));
+
+    return _.orderBy(
+      Object.values({
+        ..._.keyBy(aggFields, "name"),
+        ...(calcFields ? _.keyBy(calcFields, "name") : {}),
+      }).map((field: any) => {
+        const dataType = getFieldDataType(field.name);
+        const valueType =
+          field.valueType ||
+          guessFieldValueType(
+            field.name,
+            dataType,
+            field.fieldType,
+            field.name === groupBy
+          );
+        return {
+          ...field,
+          valueType: valueType,
+          dataType: dataType,
+          valueComponent: field.valueComponent || ValueDisplayFields[dataType],
+        } as VizComponentFieldDefinition;
+      }),
+      "order"
+    );
+  }, [fields, getFieldDataType]);
+
   return (
     <VizComponentContext.Provider
       value={{
@@ -336,6 +453,7 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
         groupBy: groupBy,
         sort: sort,
         focusIds: focusIds,
+        fieldDefinitions: fieldDefinitions,
         clearFocusActions: clearFocusActions,
         handleUpdateSort: handleUpdateSort,
         hoveredIds: hoveredIds,

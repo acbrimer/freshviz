@@ -9,27 +9,8 @@ import VizContext, {
 } from "./VizContext";
 import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
-import AGG_FUNCTIONS from "./vizFieldFunctions";
+import AGG_FUNCTIONS, { aggFieldName } from "./vizFieldFunctions";
 import { FilterItemProps, applyFilterItem } from "../util/filters";
-/**
- * aggFieldName
- * Needed to pepend agg in correct place for flattened array/nested values
- * Example:
- * `('name', 'value') -> 'name'`
- *
- * `('height', 'avg') -> '__AVG__height'`
- *
- * `('orders.*.tot_price', 'sum') -> 'orders.*.__SUM__tot_price`
- * @param f the name of the field
- * @param agg the aggregation method
- * @returns name of field with prepended __{agg}__
- */
-const aggFieldName = (f: string, agg: string) =>
-  agg === "value"
-    ? f
-    : f.includes(".")
-    ? `__${agg}__${_.last(f.split("."))}`
-    : `__${agg}__${f}`;
 
 /**
  * applyAggregates
@@ -193,6 +174,7 @@ const VizProvider = (props: VizProviderProps) => {
             field: k,
             agg: a,
             name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
+            
             re: getRegExp(k),
             fn: _.has(AGG_FUNCTIONS, a)
               ? AGG_FUNCTIONS[a as VizFieldFunctionType]

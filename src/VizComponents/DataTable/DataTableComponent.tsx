@@ -19,8 +19,9 @@ export interface DataTableComponentProps {
 
 const DataTableComponent = (props: DataTableComponentProps) => {
   const { style } = props;
-  const c = React.useContext(VizComponentContext);
-  const { data, groupBy, sort, focusIds, clearFocusActions } = c;
+
+  const { data, groupBy, sort, focusIds, clearFocusActions, fieldDefinitions } =
+    React.useContext(VizComponentContext);
   const tableRef = React.useRef<TableVirtuosoHandle>();
 
   const getIdIndex = React.useCallback(
@@ -68,10 +69,14 @@ const DataTableComponent = (props: DataTableComponentProps) => {
             <TableBody {...props} ref={ref} />
           )),
         }}
-        fixedHeaderContent={() => (
-          <DataTableHeader fields={Object.keys(data[0])} />
+        fixedHeaderContent={() => <DataTableHeader />}
+        itemContent={(ix, record) => (
+          <DataTableRow
+            ix={ix}
+            record={record}
+            fieldDefinitions={fieldDefinitions}
+          />
         )}
-        itemContent={(ix, record) => <DataTableRow ix={ix} record={record} />}
       />
     ),
     [data, sort]

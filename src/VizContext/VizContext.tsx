@@ -14,8 +14,17 @@ export type VizFieldFunctionType =
   | "stdev"
   | "zs";
 
+export interface VizDataFieldDefinition {
+  label?: string;
+  description?: string;
+  valueType?: "dimension" | "measure";
+  order?: number;
+  labelComponent?: JSX.Element;
+  valueComponent?: JSX.Element;
+}
+
 export type VizDataFieldProps = {
-  [k in VizFieldFunctionType]?: boolean | string;
+  [k in VizFieldFunctionType]?: boolean | string | VizDataFieldDefinition;
 };
 
 export type VizDataFieldFuctionsObject = {
@@ -27,7 +36,12 @@ export type VizDataFieldsObject = {
 };
 
 export interface VizCalculatedFieldProps {
-  name: string;
+  label?: string;
+  valueType?: "dimension" | "measure";
+  description?: string;
+  order?: number;
+  labelComponent?: JSX.Element;
+  valueComponent?: JSX.Element;
   fn: (record: any) => any;
 }
 

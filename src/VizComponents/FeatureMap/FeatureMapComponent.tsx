@@ -23,7 +23,7 @@ import "leaflet/dist/leaflet.css";
 import testMapData from "./precincts_2020.json";
 
 export interface FeatureMapComponentProps {
-  mapGeojson?: any;
+  mapGeojson: any;
 }
 
 const FeatureMapComponent = (props: FeatureMapComponentProps) => {
@@ -33,6 +33,7 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
     data,
     groupBy,
     hoveredIds,
+    selectedIds,
     handleMouseOver,
     handleMouseOut,
     handleClick,
@@ -45,9 +46,22 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
 
   const getMapStyle = React.useCallback(
     (feature?: geojson.Feature<geojson.Geometry, any>) => ({
-      color: hoveredIds.includes(feature.properties.id) ? "yellow" : "blue",
+      weight:
+        hoveredIds.includes(feature.properties.id) ||
+        selectedIds.includes(feature.properties.id)
+          ? 3
+          : 1,
+      color: feature.properties._include ? "blue" : "transparent",
+      fillOpacity:
+        selectedIds.length > 0 && !selectedIds.includes(feature.properties.id)
+          ? 0.05
+          : 0.5,
+      opacity:
+        selectedIds.length > 0 && !selectedIds.includes(feature.properties.id)
+          ? 0.2
+          : 0.8,
     }),
-    [hoveredIds]
+    [hoveredIds, selectedIds]
   );
 
   const onMouseOver = (event: LeafletMouseEvent) => {
@@ -95,22 +109,47 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
     }
   }, [focusIds]);
 
+  React.useLayoutEffect(() => {
+    if (layerRef && layerRef.current) {
+      layerRef.current.eachLayer((layer: any) => {
+        const layerData = _.find(data, {
+          [groupBy]: layer.feature.properties.id,
+        });
+        layer.feature.properties = {
+          ...layer.feature.properties,
+          _include: layerData && true,
+          ...(layerData || {}),
+        };
+      });
+      try {
+        mapRef.current.fitBounds(
+          latLngBounds(
+            layerRef.current
+              .getLayers()
+              .filter((layer: any) => layer.feature.properties._include)
+              .map((layer: any) => layer.getBounds())
+          )
+        );
+      } catch (e: any) {}
+    }
+  }, [data]);
+
   const mapData = React.useMemo(
-    () =>
-      mapGeojson && true
-        ? data
-            .map((d: any) => ({
-              data: d,
-              feature: _.find(mapGeojson.features, {
-                properties: { id: d[groupBy] },
-              }),
+    () => ({
+      type: "FeatureCollection",
+      features:
+        mapGeojson && true
+          ? mapGeojson.features.map((feat: any) => ({
+              ...feat,
+              properties: {
+                ...feat.properties,
+                _include:
+                  _.find(data, { [groupBy]: feat.properties.id }) && true,
+                ...(_.find(data, { [groupBy]: feat.properties.id }) || {}),
+              },
             }))
-            .filter((f: any) => f.feature && true)
-            .map((f: any) => ({
-              ...f.feature,
-              properties: { ...f.feature.properties, ...f.data },
-            }))
-        : [],
+          : [],
+    }),
     [mapGeojson]
   );
 
@@ -137,7 +176,7 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
       <LayerGroup>
         <GeoJSON
           ref={layerRef}
-          data={{ type: "FeatureCollection", features: mapData } as any}
+          data={mapData as any}
           onEachFeature={onEachFeature}
           style={getMapStyle}
         />
