@@ -11,7 +11,7 @@ export type FeatureMapProps = Omit<VizComponentProviderProps, "children"> &
   FeatureMapComponentProps;
 
 const FeatureMap = (props: FeatureMapProps) => {
-  const { groupBy, fields, linkActions, name, mapGeojson } = props;
+  const { groupBy, fields, linkActions, name } = props;
   return (
     <VizComponentProvider
       groupBy={groupBy}
@@ -19,7 +19,7 @@ const FeatureMap = (props: FeatureMapProps) => {
       linkActions={linkActions}
       name={name}
     >
-      <FeatureMapComponent mapGeojson={mapGeojson} />
+      <FeatureMapComponent {...props} />
     </VizComponentProvider>
   );
 };
