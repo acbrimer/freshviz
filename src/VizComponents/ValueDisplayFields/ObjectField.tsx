@@ -1,6 +1,7 @@
 import * as React from "react";
 import Typography, { TypographyProps } from "@mui/material/Typography";
 import { CommonFieldProps } from "./fields";
+import { withFieldRecordContext } from "./FieldRecordProvider";
 
 export interface ObjectFieldProps extends CommonFieldProps {
   TypographyProps?: Omit<TypographyProps, "children">;
@@ -9,9 +10,9 @@ export interface ObjectFieldProps extends CommonFieldProps {
 const ObjectField = (props: ObjectFieldProps) => (
   <Typography {...(props.TypographyProps || {})}>
     {props.format
-      ? props.format(props.value)
-      : JSON.stringify(props.value, null, "\t")}
+      ? props.format(props.record[props.source])
+      : JSON.stringify(props.record[props.source], null, "\t")}
   </Typography>
 );
 
-export default React.memo(ObjectField);
+export default withFieldRecordContext(React.memo(ObjectField));

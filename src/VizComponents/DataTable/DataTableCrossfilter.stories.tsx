@@ -41,7 +41,9 @@ const DataTableCrossfilter = (props: any) => {
             fields={{
               county_id: { value: true },
               tot_votes: { sum: "tot_votes" },
-              precinct_id: { count: "tot_precincts" },
+              precinct_id: {
+                count: "tot_precincts",
+              },
             }}
             linkActions={[
               {

@@ -2,8 +2,6 @@ import * as React from "react";
 import * as _ from "lodash";
 import VizContext, {
   VizContextState,
-  VizDataFieldsObject,
-  VizActionState,
   VizSortState,
   VizGetDataProps,
 } from "../VizContext/VizContext";
@@ -17,7 +15,7 @@ import {
   guessFieldValueType,
 } from "../VizContext/vizFieldFunctions";
 import { applyFilterItem, filterData, FilterItemProps } from "../util/filters";
-import ValueDisplayFields from "./ValueDisplayFields";
+import { defaultFields } from "./ValueDisplayFields";
 
 export interface VizComponentLinkActionProps {
   /**The `name` of the component triggering action  */
@@ -141,11 +139,11 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
     [hoverActionIds]
   );
 
-  const focusIds = React.useMemo(
-    () =>
-      focusActionIds.length === 0 ? null : mergeActionFilterIds(focusActionIds),
-    [focusActionIds]
-  );
+  const focusIds = React.useMemo(() => {
+    return focusActionIds.length === 0
+      ? null
+      : mergeActionFilterIds(focusActionIds);
+  }, [focusActionIds]);
 
   const clearFocusActions = () => setFocusActionIds([]);
 
@@ -438,7 +436,7 @@ const VizComponentProvider = (props: VizComponentProviderProps) => {
           ...field,
           valueType: valueType,
           dataType: dataType,
-          valueComponent: field.valueComponent || ValueDisplayFields[dataType],
+          valueComponent: field.valueComponent || defaultFields[dataType],
         } as VizComponentFieldDefinition;
       }),
       "order"

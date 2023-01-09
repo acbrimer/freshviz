@@ -1,15 +1,26 @@
 import * as React from "react";
-
-import TableRow from "@mui/material/TableRow";
+import TableRow, {
+  TableRowProps as MuiTableRowProps,
+} from "@mui/material/TableRow";
 import VizComponentContext from "../VizComponentContext";
+import { VizContext } from "../../VizContext";
 
-const DataTableRowWrapper = (props: any) => {
-  const { children } = props;
+export interface TableRowProps
+  extends Omit<MuiTableRowProps, "children" | "hover"> {
+  hover?: boolean;
+  select?: boolean;
+  ref?: any;
+  children: any;
+}
+
+const DataTableRowWrapper = (props: TableRowProps) => {
+  const { children, hover, select } = props;
   const c = React.useContext(VizComponentContext);
   const {
     handleMouseOver,
     handleMouseOut,
     handleClick,
+
     selectedIds,
     hoveredIds,
     groupBy,
@@ -38,22 +49,26 @@ const DataTableRowWrapper = (props: any) => {
     [hoveredIds]
   );
 
-  const row = React.useMemo(
-    () => (
+  const row = React.useMemo(() => {
+    return (
       <TableRow
         {...props}
-        sx={{ backgroundColor: isHovered ? "lightyellow" : "white" }}
+        className={hover && isHovered && "Mui-active"}
         selected={isSelected}
-        hover
-        onClick={handleRowClick}
-        onMouseOver={onMouseOver}
-        onMouseOut={onMouseOut}
+        hover={hover}
+        onClick={select && handleRowClick}
+        onMouseOver={hover && onMouseOver}
+        onMouseOut={hover && onMouseOut}
       />
-    ),
-    [isSelected, isHovered]
-  );
+    );
+  }, [isSelected, isHovered, hover, select]);
 
   return <>{row}</>;
+};
+
+DataTableRowWrapper.defaultProps = {
+  hover: true,
+  select: true,
 };
 
 export default React.memo(DataTableRowWrapper);

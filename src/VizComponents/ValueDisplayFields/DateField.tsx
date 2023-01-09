@@ -2,6 +2,8 @@ import * as React from "react";
 import Typography, { TypographyProps } from "@mui/material/Typography";
 import { CommonFieldProps } from "./fields";
 
+import { withFieldRecordContext } from "./FieldRecordProvider";
+
 export interface DateFieldProps extends CommonFieldProps {
   options?: any;
   TypographyProps?: Omit<TypographyProps, "children">;
@@ -16,12 +18,12 @@ const DEFAULT_DATE_OPTIONS = {
 const DateField = (props: DateFieldProps) => (
   <Typography {...(props.TypographyProps || {})}>
     {props.format
-      ? props.format(props.value)
-      : props.value.toLocaleDateString(
+      ? props.format(props.record[props.source])
+      : props.record[props.source].toLocaleDateString(
           "en-us",
           props.options || DEFAULT_DATE_OPTIONS
         )}
   </Typography>
 );
 
-export default React.memo(DateField);
+export default withFieldRecordContext(React.memo(DateField));

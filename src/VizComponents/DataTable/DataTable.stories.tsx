@@ -48,20 +48,12 @@ const DataTableDemo = (props: any) => {
         name="precincts"
         groupBy="precinct_id"
         fields={{
+          precinct_id: { value: true },
           county_id: { value: true },
           tot_votes: { value: true, zs: "tot_votes_z" },
           candidates: { value: true },
         }}
-        calculatedFields={{
-          precinct_label: {
-            label: "Precinct",
-            fn: (record: any) => `Precinct ${record.precinct_id}`,
-          },
-          current_time: {
-            label: "Current time",
-            fn: (record: any) => new Date(),
-          },
-        }}
+        
       />
     </VizProvider>
   );

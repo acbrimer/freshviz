@@ -1,5 +1,5 @@
 export interface CommonFieldProps {
   source: string;
-  value: any;
+  record: any;
   format?: (value: any) => any;
 }

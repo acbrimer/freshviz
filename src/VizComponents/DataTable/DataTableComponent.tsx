@@ -1,24 +1,49 @@
 import * as React from "react";
 import * as _ from "lodash";
-import { TableVirtuoso, TableVirtuosoHandle } from "react-virtuoso";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
+import {
+  TableVirtuoso,
+  TableVirtuosoHandle,
+  TableVirtuosoProps,
+} from "react-virtuoso";
+import Table, { TableProps } from "@mui/material/Table";
+import TableBody, { TableBodyProps } from "@mui/material/TableBody";
+import TableContainer, {
+  TableContainerProps,
+} from "@mui/material/TableContainer";
+import TableHead, { TableHeadProps } from "@mui/material/TableHead";
+import TableCell from "@mui/material/TableCell";
 import Paper from "@mui/material/Paper";
 import VizComponentContext from "../VizComponentContext";
+import FieldRecordProvider from "../ValueDisplayFields/FieldRecordProvider";
 
-import DataTableRow from "./DataTableRow";
 import DataTableHeader from "./DataTableHeader";
-import DataTableRowWrapper from "./DataTableRowWrapper";
+import DataTableRowWrapper, { TableRowProps } from "./DataTableRowWrapper";
 
 export interface DataTableComponentProps {
+  overscan?:
+    | number
+    | {
+        main: number;
+        reverse: number;
+      };
   style?: React.CSSProperties;
+  TableContainerProps?: TableContainerProps;
+  TableProps?: TableProps;
+  TableBodyProps?: TableBodyProps;
+  TableHeadProps?: TableHeadProps;
+  TableRowProps?: TableRowProps;
 }
 
 const DataTableComponent = (props: DataTableComponentProps) => {
-  const { style } = props;
+  const {
+    overscan,
+    style,
+    TableContainerProps,
+    TableProps,
+    TableBodyProps,
+    TableHeadProps,
+    TableRowProps,
+  } = props;
 
   const { data, groupBy, sort, focusIds, clearFocusActions, fieldDefinitions } =
     React.useContext(VizComponentContext);
@@ -39,12 +64,14 @@ const DataTableComponent = (props: DataTableComponentProps) => {
   const table = React.useMemo(
     () => (
       <TableVirtuoso
-        overscan={{
-          main: 100,
-          reverse: 100,
-        }}
+        overscan={
+          overscan || {
+            main: 100,
+            reverse: 100,
+          }
+        }
         ref={tableRef}
-        style={{ height: 400, ...style }}
+        style={{ height: 200, ...style }}
         data={
           sort && Object.keys(sort).length > 0
             ? _.orderBy(data, Object.keys(sort), Object.values(sort))
@@ -53,29 +80,47 @@ const DataTableComponent = (props: DataTableComponentProps) => {
         components={{
           Scroller: React.forwardRef((props, ref) =>
             React.useMemo(
-              () => <TableContainer component={Paper} {...props} ref={ref} />,
+              () => (
+                <TableContainer
+                  component={Paper}
+                  {...props}
+                  {...TableContainerProps}
+                  ref={ref}
+                />
+              ),
               []
             )
           ),
           Table: (props) => (
-            <Table {...props} style={{ borderCollapse: "separate" }} />
+            <Table
+              {...props}
+              style={{ borderCollapse: "separate" }}
+              {...TableProps}
+            />
           ),
-          TableHead: TableHead,
+          TableHead: React.forwardRef((props, ref) => (
+            <TableHead {...props} {...TableHeadProps} ref={ref} />
+          )),
           // @ts-ignore
-          TableRow: React.forwardRef((props: any, ref) => (
-            <DataTableRowWrapper {...props} ref={ref} />
+          TableRow: React.forwardRef((props, ref) => (
+            <DataTableRowWrapper {...props} {...TableRowProps} ref={ref} />
           )),
           TableBody: React.forwardRef((props, ref) => (
-            <TableBody {...props} ref={ref} />
+            <TableBody {...props} {...TableBodyProps} ref={ref} />
           )),
         }}
         fixedHeaderContent={() => <DataTableHeader />}
         itemContent={(ix, record) => (
-          <DataTableRow
-            ix={ix}
-            record={record}
-            fieldDefinitions={fieldDefinitions}
-          />
+          <FieldRecordProvider record={record}>
+            {fieldDefinitions.map((field, fieldIx) => (
+              <TableCell key={`cell-${ix}-${fieldIx}`}>
+                {React.cloneElement(field.valueComponent, {
+                  source: field.name,
+                  valueType: field.valueType,
+                })}
+              </TableCell>
+            ))}
+          </FieldRecordProvider>
         )}
       />
     ),
@@ -93,6 +138,16 @@ const DataTableComponent = (props: DataTableComponentProps) => {
   }, [getIdIndex, focusIds]);
 
   return <>{table}</>;
+};
+
+DataTableComponent.defaultProps = {
+  TableBodyProps: {
+    sx: {
+      "& .Mui-active, .MuiTableRow-hover:hover": {
+        backgroundColor: "rgba(0, 0, 0, 0.04)",
+      },
+    },
+  },
 };
 
 export default React.memo(DataTableComponent);

@@ -174,7 +174,6 @@ const VizProvider = (props: VizProviderProps) => {
             field: k,
             agg: a,
             name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
-            
             re: getRegExp(k),
             fn: _.has(AGG_FUNCTIONS, a)
               ? AGG_FUNCTIONS[a as VizFieldFunctionType]
@@ -211,11 +210,21 @@ const VizProvider = (props: VizProviderProps) => {
         )
       );
 
+      const dataFieldMap = Object.keys(dataFields).flatMap(
+        (f: any) => dataFields[f]
+      );
+
       const g = _.groupBy(
         (innerFilterIds && Array.isArray(innerFilterIds)
           ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
           : records
-        ).map((v) => _.pick(flatten(v), Object.keys(dataFields))),
+        ).map((v) =>
+          flatten(
+            Object.fromEntries(
+              dataFieldMap.map((df: any) => [df.name, v[df.field]])
+            )
+          )
+        ),
         groupBy
       );
 

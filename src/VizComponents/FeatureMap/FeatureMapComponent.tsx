@@ -27,7 +27,7 @@ export interface FeatureMapComponentProps {
 }
 
 const FeatureMapComponent = (props: FeatureMapComponentProps) => {
-  const mapGeojson = props.mapGeojson || testMapData;
+  const mapGeojson = props.mapGeojson;
 
   const {
     data,

@@ -1,6 +1,7 @@
 import * as React from "react";
 import Typography, { TypographyProps } from "@mui/material/Typography";
 import { CommonFieldProps } from "./fields";
+import { withFieldRecordContext } from "./FieldRecordProvider";
 
 export interface IntegerFieldProps extends CommonFieldProps {
   valueType?: "measure" | "dimension";
@@ -13,14 +14,17 @@ const DEFAULT_INT_OPTIONS = {
   maximumFractionDigits: 0,
 };
 
-const IntegerField = (props: IntegerFieldProps) => (
-  <Typography variant="body2" {...(props.TypographyProps || {})}>
-    {props.format
-      ? props.format(props.value)
-      : props.value.toLocaleString("en-us", {
-          ...(props.options || DEFAULT_INT_OPTIONS),
-        })}
-  </Typography>
-);
+const IntegerField = (props: IntegerFieldProps) => {
+  return (
+    <Typography variant="body2" {...(props.TypographyProps || {})}>
+      {props.format
+        ? props.format(props.record[props.source])
+        : props.record[props.source].toLocaleString("en-us", {
+            ...(props.options || DEFAULT_INT_OPTIONS),
+            useGrouping: props.valueType === "measure",
+          })}
+    </Typography>
+  );
+};
 
-export default React.memo(IntegerField);
+export default withFieldRecordContext(React.memo(IntegerField));
