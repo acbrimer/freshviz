@@ -16,18 +16,31 @@ import {
   Layer as LeafletLayer,
   LeafletMouseEvent,
   latLngBounds,
+  LatLngBounds,
 } from "leaflet";
 import VizComponentContext from "../VizComponentContext";
 import "leaflet/dist/leaflet.css";
-// @ts-ignore
-import testMapData from "./precincts_2020.json";
+// // @ts-ignore
+// import testMapData from "./precincts_2020.json";
 
 export interface FeatureMapComponentProps {
   mapGeojson: any;
+  bounds?: LatLngBounds;
+  maxBounds?: LatLngBounds;
 }
 
+const DEFAULT_BOUNDS = latLngBounds(
+  { lat: 37.00231831600007, lng: -94.43066908599997 },
+  { lat: 33.61579299500005, lng: -103.00246431499994 }
+).pad(0.1);
+
+const DEFAULT_MAX_BOUNDS = latLngBounds(
+  { lat: 37.00231831600007, lng: -94.43066908599997 },
+  { lat: 33.61579299500005, lng: -103.00246431499994 }
+).pad(0.1);
+
 const FeatureMapComponent = (props: FeatureMapComponentProps) => {
-  const mapGeojson = props.mapGeojson;
+  const { mapGeojson, bounds, maxBounds } = props;
 
   const {
     data,
@@ -159,14 +172,8 @@ const FeatureMapComponent = (props: FeatureMapComponentProps) => {
   return (
     <MapContainer
       style={{ width: "100%", height: "100%" }}
-      bounds={latLngBounds(
-        { lat: 37.00231831600007, lng: -94.43066908599997 },
-        { lat: 33.61579299500005, lng: -103.00246431499994 }
-      ).pad(0.1)}
-      maxBounds={latLngBounds(
-        { lat: 37.00231831600007, lng: -94.43066908599997 },
-        { lat: 33.61579299500005, lng: -103.00246431499994 }
-      ).pad(0.1)}
+      bounds={bounds || DEFAULT_BOUNDS}
+      maxBounds={maxBounds || DEFAULT_MAX_BOUNDS}
       ref={mapRef}
     >
       <TileLayer
