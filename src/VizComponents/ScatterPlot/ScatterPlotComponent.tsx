@@ -20,25 +20,28 @@ export interface ScatterPlotComponentProps extends ReavizComponentCommonProps {
   >;
 }
 
-const ScatterPlotComponent = React.memo((props: ScatterPlotComponentProps) => {
+const ScatterPlotComponent = (props: ScatterPlotComponentProps) => {
   const { keyField, dataField, idField, ScatterPlotProps, ScatterSeriesProps } =
     props;
   const c = React.useContext(VizComponentContext);
   const { data, groupBy, hoveredIds } = c;
 
+  const ScatterSeries = React.useMemo(
+    () => (
+      <ReavizScatterSeries
+        animated={false}
+        {...ScatterSeriesProps}
+        point={<ScatterPoint />}
+      />
+    ),
+    []
+  );
   return (
     <ReavizScatterPlot
-      height={300}
-      width={300}
+      height={500}
+      width={500}
       {...ScatterPlotProps}
-      series={
-        <ReavizScatterSeries
-          animated={false}
-          {...ScatterSeriesProps}
-          activeIds={hoveredIds}
-          point={<ScatterPoint />}
-        />
-      }
+      series={ScatterSeries}
       data={data.map((d: any) => ({
         id: d[idField || groupBy],
         key: d[keyField],
@@ -47,6 +50,6 @@ const ScatterPlotComponent = React.memo((props: ScatterPlotComponentProps) => {
       }))}
     />
   );
-});
+};
 
-export default ScatterPlotComponent;
+export default React.memo(ScatterPlotComponent);

@@ -1,34 +1,16 @@
 import * as React from "react";
 import VizContext, {
-  VizRecordsObject,
   VizFieldFunctionType,
-  VizRecordState,
   VizActionState,
+  VizComponentRecordState,
+  VizCalculatedFieldsObject,
+  VizComponentSortState,
+  VizSortState,
 } from "./VizContext";
 import * as _ from "lodash";
 import { flatten, unflatten } from "flattenizer";
-import AGG_FUNCTIONS from "./vizFieldFunctions";
+import AGG_FUNCTIONS, { aggFieldName } from "./vizFieldFunctions";
 import { FilterItemProps, applyFilterItem } from "../util/filters";
-
-/**
- * aggFieldName
- * Needed to pepend agg in correct place for flattened array/nested values
- * Example:
- * `('name', 'value') -> 'name'`
- *
- * `('height', 'avg') -> '__AVG__height'`
- *
- * `('orders.*.tot_price', 'sum') -> 'orders.*.__SUM__tot_price`
- * @param f the name of the field
- * @param agg the aggregation method
- * @returns name of field with prepended __{agg}__
- */
-const aggFieldName = (f: string, agg: string) =>
-  agg === "value"
-    ? f
-    : f.includes(".")
-    ? `__${agg}__${_.last(f.split("."))}`
-    : `__${agg}__${f}`;
 
 /**
  * applyAggregates
@@ -64,39 +46,110 @@ const VizProvider = (props: VizProviderProps) => {
   const { data, idField, globalIdField } = props;
 
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [records, setRecords] = React.useState<VizRecordState[]>([]);
+  const [records, setRecords] = React.useState<any[]>([]);
   const [ids, setIds] = React.useState<any>([]);
-  const [hoveredIds, setHoveredIds] = React.useState<any>([]);
-  const [actionStates, setActionStates] = React.useState<VizActionState[]>([]);
+  const [hoveredRecords, setHoveredRecords] = React.useState<
+    VizComponentRecordState[]
+  >([]);
+  const [selectedRecords, setSelectedRecords] = React.useState<
+    VizComponentRecordState[]
+  >([]);
 
-  const onMouseOver = (id: any) => {
-    if (Array.isArray(id)) {
-      // @ts-ignore
-      setHoveredIds(id);
+  const [componentSortStates, setComponentSortStates] = React.useState<
+    VizComponentSortState[]
+  >([]);
+
+  const updateComponentSort = React.useCallback(
+    (component: string, sort: VizSortState) => {
+      setComponentSortStates((current) =>
+        _.find(current, { component: component })
+          ? [
+              ..._.reject(current, { component: component }),
+              { component: component, sort: sort },
+            ]
+          : [...current, { component: component, sort: sort }]
+      );
+    },
+    []
+  );
+
+  const handleToggleSelectedRecord = React.useCallback(
+    (source: string, id: number | string, data: any) => {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? _.reject(current, { source: source, id: id })
+          : [...current, { source, id, data }]
+      );
+    },
+    []
+  );
+
+  const handleAddSelectedRecord = React.useCallback(
+    (source: string, id: number | string, data: any) => {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? current
+          : [...current, { source, id, data }]
+      );
+    },
+    []
+  );
+
+  const handleRemoveSelectedRecord = React.useCallback(
+    (source: string, id: number | string) => {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? _.reject(current, { source: source, id: id })
+          : current
+      );
+    },
+    []
+  );
+
+  const handleClearSelectedRecords = React.useCallback((source?: string) => {
+    if (source) {
+      setSelectedRecords((current) =>
+        _.find(current, { source: source })
+          ? _.reject(current, { source: source })
+          : current
+      );
     } else {
-      // @ts-ignore
-      setHoveredIds([id]);
+      setSelectedRecords([]);
     }
-  };
-
-  const onMouseOut = () => {
-    setHoveredIds([]);
-  };
-
-  const handleAddActionState = React.useCallback((s: VizActionState) => {
-    setActionStates((current: VizActionState[]) => [...current, s]);
   }, []);
 
-  const handleRemoveActionState = React.useCallback((s: VizActionState) => {
-    setActionStates((current: VizActionState[]) =>
-      _.filter(
-        current,
-        (v: VizActionState) =>
-          v.actionState !== s.actionState &&
-          v.id !== s.id &&
-          v.source !== s.source
-      )
-    );
+  const handleAddHoveredRecord = React.useCallback(
+    (source: string, id: number | string, data: any) => {
+      setHoveredRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? current
+          : [...current, { source, id, data }]
+      );
+    },
+    []
+  );
+
+  const handleRemoveHoveredRecord = React.useCallback(
+    (source: string, id: number | string) => {
+      setHoveredRecords((current) =>
+        _.find(current, { source: source, id: id })
+          ? _.reject(current, { source: source, id: id })
+          : current
+      );
+    },
+    []
+  );
+
+  const handleClearHoveredRecords = React.useCallback((source?: string) => {
+    if (source) {
+      setHoveredRecords((current) =>
+        _.find(current, { source: source })
+          ? _.reject(current, { source: source })
+          : current
+      );
+    } else {
+      setHoveredRecords([]);
+    }
   }, []);
 
   const getFilterItemIds = React.useCallback(
@@ -115,15 +168,17 @@ const VizProvider = (props: VizProviderProps) => {
   const getAggregateData = React.useCallback(
     (groupBy: string, fields: any, innerFilterIds?: any[]) => {
       const aggFields = Object.keys(fields).flatMap((k: any) =>
-        Object.keys(fields[k]).map((a: string) => ({
-          field: k,
-          agg: a,
-          name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
-          re: getRegExp(k),
-          fn: _.has(AGG_FUNCTIONS, a)
-            ? AGG_FUNCTIONS[a as VizFieldFunctionType]
-            : null,
-        }))
+        Object.keys(fields[k])
+          .filter((a: any) => a !== "zs")
+          .map((a: string) => ({
+            field: k,
+            agg: a,
+            name: fields[k][a] === true ? aggFieldName(k, a) : fields[k][a],
+            re: getRegExp(k),
+            fn: _.has(AGG_FUNCTIONS, a)
+              ? AGG_FUNCTIONS[a as VizFieldFunctionType]
+              : null,
+          }))
       );
 
       const pickFields = (val: any, k: string) =>
@@ -147,21 +202,6 @@ const VizProvider = (props: VizProviderProps) => {
       // add groupBy field
       dataFields[groupBy] = [{ field: groupBy, name: groupBy, agg: "value" }];
 
-      let d = _.map(
-        innerFilterIds && Array.isArray(innerFilterIds)
-          ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
-          : records,
-        flatten
-      );
-
-      d = d.map((r: any, ix: number) =>
-        Object.fromEntries(
-          Object.keys(dataFields).flatMap((df: string) =>
-            dataFields[df].map((f: any) => [f.name, r[df]])
-          )
-        )
-      );
-
       const dataFieldFunctions = Object.fromEntries(
         _.flatten(
           Object.keys(dataFields).map((df: string) =>
@@ -170,13 +210,27 @@ const VizProvider = (props: VizProviderProps) => {
         )
       );
 
-      const g = _.groupBy(d, groupBy);
-
-      const res = Object.keys(g).map((k: any) =>
-        unflatten(applyAggregates(g[k], dataFieldFunctions))
+      const dataFieldMap = Object.keys(dataFields).flatMap(
+        (f: any) => dataFields[f]
       );
 
-      return res;
+      const g = _.groupBy(
+        (innerFilterIds && Array.isArray(innerFilterIds)
+          ? _.filter(records, (v: any) => innerFilterIds.includes(v[idField]))
+          : records
+        ).map((v) =>
+          flatten(
+            Object.fromEntries(
+              dataFieldMap.map((df: any) => [df.name, v[df.field]])
+            )
+          )
+        ),
+        groupBy
+      );
+
+      return Object.keys(g).map((k: any) =>
+        unflatten(applyAggregates(g[k], dataFieldFunctions))
+      );
     },
     [records, idField]
   );
@@ -185,16 +239,50 @@ const VizProvider = (props: VizProviderProps) => {
     (
       groupBy: string,
       fields: any,
-      useFilter?: boolean,
-      innerFilterIds?: any[]
+      innerFilterIds?: any[],
+      calculatedFields?: VizCalculatedFieldsObject,
+      select?: (data: any[]) => any[]
     ) => {
       const fieldNames = [idField, ...Object.keys(fields)];
       // console.log("records", records[0]);
-      const d =
+      let d = _.map(
         groupBy === idField
           ? _.map(records, (v: any) => _.pick(v, fieldNames))
-          : getAggregateData(groupBy, fields, innerFilterIds);
-      // console.log("getData", d);
+          : getAggregateData(groupBy, fields, innerFilterIds),
+        (r: any) =>
+          calculatedFields && true
+            ? {
+                ...r,
+                ...Object.fromEntries(
+                  Object.keys(calculatedFields).map((field: string) => [
+                    field,
+                    calculatedFields[field].fn(r),
+                  ])
+                ),
+              }
+            : r
+      );
+      const applyZscores = Object.keys(fields)
+        .filter((f: string) => _.has(fields[f], "zs"))
+        .map((f: any) => ({
+          field: f,
+          name: fields[f].zs === true ? f : fields[f].zs,
+          avg: AGG_FUNCTIONS.avg(d.map((r: any) => r[f])),
+          stdev: AGG_FUNCTIONS.stdev(d.map((r: any) => r[f])),
+        }));
+
+      if (applyZscores && applyZscores.length > 0) {
+        return d.map((r: any) => ({
+          ...r,
+          ...Object.fromEntries(
+            applyZscores.map((zf: any) => [
+              zf.name,
+              (r[zf.field] - zf.avg) / zf.stdev,
+            ])
+          ),
+        }));
+      }
+
       return d;
     },
     [records]
@@ -204,17 +292,21 @@ const VizProvider = (props: VizProviderProps) => {
     if (data) {
       setIds(data.map((d: any) => d[idField]));
       setRecords(
-        data.map(
-          (d: any) =>
-            ({
-              ...d,
-              id: d[idField],
-              global_id: d[globalIdField || "id"],
-            } as VizRecordState)
-        )
+        data.map((d: any) => ({
+          ...d,
+          id: d[idField],
+          global_id: d[globalIdField || "id"],
+        }))
       );
       setIsLoading(false);
     }
+    return () => {
+      console.log("unmount state", {
+        selectedRecords,
+        hoveredRecords,
+        componentSortStates,
+      });
+    };
   }, [data, globalIdField, idField]);
 
   if (props.isLoading || isLoading) {
@@ -226,13 +318,20 @@ const VizProvider = (props: VizProviderProps) => {
         isLoading: isLoading,
         ids: ids,
         records: records,
-        actionStates: actionStates,
-        handleAddActionState: handleAddActionState,
-        handleRemoveActionState: handleRemoveActionState,
+        componentSortStates: componentSortStates,
+        updateComponentSort: updateComponentSort,
+        hoveredRecords: hoveredRecords,
+        handleAddHoveredRecord: handleAddHoveredRecord,
+        handleRemoveHoveredRecord: handleRemoveHoveredRecord,
+        handleClearHoveredRecords: handleClearHoveredRecords,
+        selectedRecords: selectedRecords,
+        handleToggleSelectedRecord: handleToggleSelectedRecord,
+        handleAddSelectedRecord: handleAddSelectedRecord,
+        handleRemoveSelectedRecord: handleRemoveSelectedRecord,
+        handleClearSelectedRecords: handleClearSelectedRecords,
+        getFilterItemIds: getFilterItemIds,
         getFilterIds: getFilterIds,
         getData: getData,
-        onMouseOut: onMouseOut,
-        onMouseOver: onMouseOver,
       }}
     >
       {props.children}

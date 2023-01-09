@@ -4,29 +4,53 @@ import VizComponentContext from "../VizComponentContext";
 
 const ScatterPoint = (props: any) => {
   const c = React.useContext(VizComponentContext);
-  const { handleMouseOver, handleMouseOut } = c;
+  const {
+    handleMouseOver,
+    handleMouseOut,
+    handleClick,
+    selectedIds,
+    hoveredIds,
+    groupBy,
+  } = c;
 
-  const onMouseOver = React.useCallback(
-    async (pointData: any) => {
-      handleMouseOver(null, pointData.metadata);
-    },
-    [handleMouseOver]
+  const { metadata: record } = props.data;
+
+  const onClick = (e: any) => {
+    handleClick(e, record);
+  };
+
+  const onMouseOver = (e: any) => {
+    handleMouseOver(e, record);
+  };
+
+  const onMouseOut = (e: any) => {
+    handleMouseOut(e, record);
+  };
+
+  const isSelected = React.useMemo(
+    () => selectedIds.includes(record[groupBy]),
+    [selectedIds]
   );
 
-  const onMouseOut = React.useCallback(
-    async (pointData: any) => {
-      handleMouseOut(null, pointData.metadata);
-    },
-    [handleMouseOut]
+  const isActive = React.useMemo(
+    () => hoveredIds.length === 0 || hoveredIds.includes(record[groupBy]),
+    [hoveredIds]
   );
 
-  return (
-    <ReavizScatterPoint
-      {...props}
-      onMouseEnter={onMouseOver}
-      onMouseLeave={onMouseOut}
-    />
+  const point = React.useMemo(
+    () => (
+      <ReavizScatterPoint
+        {...props}
+        active={isActive}
+        onClick={onClick}
+        onMouseEnter={onMouseOver}
+        onMouseLeave={onMouseOut}
+      />
+    ),
+    [isActive, isSelected]
   );
+
+  return <>{point}</>;
 };
 
 export default React.memo(ScatterPoint);
